@@ -1,0 +1,4 @@
+rootProject.name = 'machinum-automata'
+include 'engine'
+include 'app'
+

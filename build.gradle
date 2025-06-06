@@ -1,0 +1,49 @@
+buildscript {
+  ext {
+    joobyVersion = '3.5.5'
+    openapiVersion = '7.12.0'
+    lombokVersion = '1.18.38'
+    slf4jVersion = '1.7.36'
+    testcontainersVersion = '1.19.8'
+    groovyVersion = '4.0.15'
+  }
+}
+
+group "machinum"
+version "1.0.0"
+
+subprojects {
+  apply plugin: 'java'
+
+  group = parent.group
+  version = parent.version
+
+  sourceCompatibility = JavaVersion.VERSION_21
+  targetCompatibility = JavaVersion.VERSION_21
+
+  repositories {
+    mavenLocal()
+    mavenCentral()
+  }
+
+  tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+  }
+
+  configurations {
+    compileOnly {
+      extendsFrom annotationProcessor
+    }
+  }
+
+  dependencies {
+    // misc
+    compileOnly "org.projectlombok:lombok:$lombokVersion"
+    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+  }
+
+  test {
+    useJUnitPlatform()
+  }
+
+}

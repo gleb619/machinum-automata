@@ -1,0 +1,31 @@
+plugins {
+    id 'groovy'
+    id 'java-library'
+}
+
+/*sourceSets {
+  main {
+    java { srcDirs = [] }
+    groovy { srcDirs = ["src/main/java", "src/main/groovy"] }
+  }
+}*/
+
+/*compileGroovy {
+    classpath += files(compileJava.destinationDirectory)
+    dependsOn compileJava
+}*/
+
+dependencies {
+    // groovy
+    implementation "org.apache.groovy:groovy:$groovyVersion"
+    implementation "org.apache.groovy:groovy-jsr223:$groovyVersion"
+
+    // app
+    implementation 'org.seleniumhq.selenium:selenium-java:4.15.0'
+    implementation 'org.testcontainers:selenium:1.19.3'
+    implementation 'org.kohsuke:groovy-sandbox:1.19'
+
+    // test
+    testImplementation "org.junit.jupiter:junit-jupiter-api:5.11.4"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:5.11.4"
+}

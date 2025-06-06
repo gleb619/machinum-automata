@@ -1,0 +1,71 @@
+plugins {
+    id 'application'
+    id 'io.jooby.openAPI' version "$joobyVersion"
+    id 'io.jooby.run' version "$joobyVersion"
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'com.google.osdetector' version '1.7.3'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'org.openapi.generator' version "$openapiVersion"
+}
+
+mainClassName = "machinum.App"
+
+dependencyManagement {
+    imports {
+        mavenBom "io.jooby:jooby-bom:$joobyVersion"
+    }
+}
+
+dependencies {
+    // engine
+    implementation project(":engine")
+    compileOnly "org.apache.groovy:groovy:$groovyVersion"
+
+    // jooby
+    annotationProcessor "io.jooby:jooby-apt"
+    implementation "io.jooby:jooby-jetty"
+    implementation "io.jooby:jooby-logback"
+    implementation "io.jooby:jooby-jackson"
+    implementation 'io.jooby:jooby-thymeleaf:3.6.0'
+
+    // docs
+    implementation('io.jooby:jooby-openapi') {
+        exclude group: 'com.google.guava', module: 'guava'
+    }
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.28'
+
+    // misc
+    annotationProcessor "io.jooby:jooby-apt"
+
+    // test
+    testImplementation "org.junit.jupiter:junit-jupiter-api:5.11.4"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:5.11.4"
+    testImplementation "io.jooby:jooby-test"
+    testImplementation "com.squareup.okhttp3:okhttp:4.12.0"
+}
+
+/** Java debug information: */
+tasks.withType(JavaCompile) {
+    options.compilerArgs += [
+            '-parameters',
+            '-Ajooby.incremental=true',
+            '-Ajooby.services=true',
+            '-Ajooby.debug=false'
+    ]
+    options.debug = true
+}
+
+shadowJar {
+    mergeServiceFiles()
+}
+
+joobyRun {
+    mainClass = mainClassName
+    restartExtensions = ["conf", "properties", "class"]
+    compileExtensions = ["java"]
+    port = 8076
+}
+joobyRun.dependsOn openAPI
+
+// swagger build
+jar.dependsOn openAPI
