@@ -2,12 +2,8 @@ package machinum.service;
 
 import lombok.extern.slf4j.Slf4j;
 import machinum.model.ChromeConfig;
-import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.chromium.ChromiumOptions;
 import org.testcontainers.containers.BrowserWebDriverContainer;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.io.File;
 import java.time.Duration;
@@ -23,11 +19,18 @@ public class ContainerFactory {
             log.info("Created recording folder: {}", recordingDirectory.getAbsolutePath());
         }
 
-        return (BrowserWebDriverContainer<?>) new BrowserWebDriverContainer()
-                .withRecordingMode(BrowserWebDriverContainer.VncRecordingMode.RECORD_ALL, recordingDirectory)
-                .withCapabilities(getPrefs())
-                .withEnv("LANG", "ru_RU")
-                .withEnv("LANGUAGE", "ru_RU");
+        var container = new BrowserWebDriverContainer()
+                .withRecordingMode(
+                        BrowserWebDriverContainer.VncRecordingMode.valueOf(config.getRecordingMode()),
+                        new File(config.getRecordingDirectory())
+                )
+                .withCapabilities(buildChromeOptions(config));
+
+        for (Map.Entry<String, String> env : config.getEnvironmentVariables().entrySet()) {
+            container.withEnv(env.getKey(), env.getValue());
+        }
+
+        return container;
     }
 
     public static ChromeOptions buildChromeOptions(ChromeConfig config) {
@@ -59,27 +62,16 @@ public class ContainerFactory {
             options.addArguments("--user-agent=" + config.getUserAgent());
         }
 
-        // Set preferences
-        if (config.getPreferences() != null && !config.getPreferences().isEmpty()) {
-            options.setExperimentalOption("prefs", config.getPreferences());
+        // Set experimental options
+        for (Map.Entry<String, Object> option : config.getExperimentalOptions().entrySet()) {
+            options.setExperimentalOption(option.getKey(), option.getValue());
         }
 
-        return options;
-    }
+        options.setImplicitWaitTimeout(Duration.ofSeconds(config.getImplicitWaitSeconds()));
+        options.setPageLoadTimeout(Duration.ofSeconds(config.getPageLoadTimeoutSeconds()));
+        options.setScriptTimeout(Duration.ofSeconds(config.getScriptTimeoutSeconds()));
 
-    private static ChromiumOptions<?> getPrefs() {
-        return new ChromeOptions()
-                .setImplicitWaitTimeout(Duration.ofMillis(300))
-                .setPageLoadStrategy(PageLoadStrategy.EAGER)
-                .setAcceptInsecureCerts(true)
-                .setExperimentalOption("prefs", Map.of(
-                        "intl.accept_languages", "ru,ru_RU",
-                        "intl.selected_languages", "ru,ru_RU"
-                ))
-                .addArguments("--lang=en,en-US")
-                .addArguments("--accept-lang=ru-RU")
-                .addArguments("--accept-language=ru-RU")
-                .addArguments("--disable-translate");
+        return options;
     }
 
 }

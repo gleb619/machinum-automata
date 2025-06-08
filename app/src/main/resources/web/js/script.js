@@ -3,7 +3,7 @@ const startTime = new Date().getTime();
 
 import { initApp } from './init.js';
 import { utilsApp } from './core.js';
-import { appApp } from './app.js';
+import { automationApp } from './automation.js';
 
 /**
  * Creates the main application with combined functionality
@@ -17,7 +17,7 @@ export function app() {
             {
                 ...Object.getOwnPropertyDescriptors(initApp()),
                 ...Object.getOwnPropertyDescriptors(utilsApp()),
-                ...Object.getOwnPropertyDescriptors(appApp()),
+                ...Object.getOwnPropertyDescriptors(automationApp()),
             }
         );
     } catch(e) {

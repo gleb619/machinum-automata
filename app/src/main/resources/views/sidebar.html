@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Layout -->
+<div th:fragment="sidebar" th:remove="tag">
+
+    <!-- Session Management -->
+    <div class="lg:col-span-1 space-y-6">
+
+        <!-- Create Session Card -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
+                <h2 class="text-xl font-semibold text-white flex items-center">
+                    <svg class="mr-2" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM17 13H13V17H11V13H7V11H11V7H13V11H17V13Z"/>
+                    </svg>
+                    Create Session
+                </h2>
+            </div>
+            <div class="p-6">
+                <form @submit.prevent="createSession()" class="space-y-6">
+
+                    <!-- Basic Settings -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-800 pb-2 border-b border-gray-200">Basic
+                            Settings</h3>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Chrome Version</label>
+                            <input class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all" placeholder="latest"
+                                   type="text"
+                                   x-model="config.version">
+                        </div>
+
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700">Headless Mode</label>
+                                <p class="text-xs text-gray-500">Run browser without GUI</p>
+                            </div>
+                            <button :class="config.headless ? 'bg-blue-600' : 'bg-gray-300'" @click="config.headless = !config.headless"
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                    type="button">
+                                <span :class="config.headless ? 'translate-x-6' : 'translate-x-1'"
+                                      class="inline-block h-4 w-4 transform rounded-full bg-white transition"></span>
+                            </button>
+                        </div>
+
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700">Accept Insecure Certs</label>
+                                <p class="text-xs text-gray-500">Allow invalid SSL certificates</p>
+                            </div>
+                            <button :class="config.acceptInsecureCerts ? 'bg-blue-600' : 'bg-gray-300'" @click="config.acceptInsecureCerts = !config.acceptInsecureCerts"
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                    type="button">
+                                <span :class="config.acceptInsecureCerts ? 'translate-x-6' : 'translate-x-1'"
+                                      class="inline-block h-4 w-4 transform rounded-full bg-white transition"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Timeouts -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-800 pb-2 border-b border-gray-200">Timeouts</h3>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Timeout</label>
+                                <div class="relative">
+                                    <input class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all" type="number"
+                                           x-model="config.timeoutSeconds">
+                                    <span class="absolute right-8 top-3.5 text-sm text-gray-500">sec</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Implicit Wait</label>
+                                <div class="relative">
+                                    <input class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all" type="number"
+                                           x-model="config.implicitWaitSeconds">
+                                    <span class="absolute right-8 top-3.5 text-sm text-gray-500">sec</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Page Load Timeout</label>
+                            <div class="relative">
+                                <input class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all" type="number"
+                                       x-model="config.pageLoadTimeoutSeconds">
+                                <span class="absolute right-8 top-3.5 text-sm text-gray-500">sec</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Page Load Strategy -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-800 pb-2 border-b border-gray-200">Load Strategy</h3>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Page Load Strategy</label>
+                            <select class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all"
+                                    x-model="config.pageLoadStrategy">
+                                <option value="NORMAL">Normal - Wait for complete page load</option>
+                                <option value="EAGER">Eager - Wait for DOM ready</option>
+                                <option value="NONE">None - Don't wait</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Recording -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-800 pb-2 border-b border-gray-200">Recording</h3>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Recording Mode</label>
+                            <select class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all"
+                                    x-model="config.recordingMode">
+                                <option value="RECORD_ALL">Record All Sessions</option>
+                                <option value="RECORD_FAILING">Record Only Failing</option>
+                                <option value="SKIP">Skip Recording</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Recording Directory</label>
+                            <input class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all" placeholder="./recordings"
+                                   type="text"
+                                   x-model="config.recordingDirectory">
+                        </div>
+                    </div>
+
+                    <!-- User Agent -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-800 pb-2 border-b border-gray-200">User Agent</h3>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Custom User Agent</label>
+                            <textarea class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all resize-none" placeholder="Leave empty for default browser user agent"
+                                      rows="3"
+                                      x-model="config.userAgent"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Chrome Arguments -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">Chrome Arguments</h3>
+                            <button @click="addArgument()" class="flex items-center px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                                    type="button">
+                                <svg class="mr-1" fill="currentColor" height="16" viewBox="0 0 24 24" width="16">
+                                    <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                                </svg>
+                                Add
+                            </button>
+                        </div>
+                        <hr class="h-px my-4 bg-gray-200 border-0 dark:bg-gray-700">
+                    </div>
+
+
+                    <div class="space-y-3 max-h-128 overflow-y-auto">
+                        <template :key="index" x-for="(arg, index) in config.arguments">
+                            <div class="flex items-center space-x-3 px-2">
+                                <input class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="The argument to use when starting Chrome."
+                                       type="text"
+                                       x-model="config.arguments[index]">
+                                <button @click="removeArgument(index)" class="flex-shrink-0 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                                        type="button">
+                                    <svg fill="currentColor" height="16" viewBox="0 0 24 24" width="16">
+                                        <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Environment Variables -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">Environment Variables</h3>
+                            <button @click="addEnvironmentVariable()" class="flex items-center px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                                    type="button">
+                                <svg class="mr-1" fill="currentColor" height="16" viewBox="0 0 24 24" width="16">
+                                    <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                                </svg>
+                                Add
+                            </button>
+                        </div>
+                        <hr class="h-px my-4 bg-gray-200 border-0 dark:bg-gray-700">
+                    </div>
+
+                    <div class="space-y-3 max-h-128 overflow-y-auto">
+                        <template :key="index" x-for="(env, index) in config.environmentVariables">
+                            <div class="grid grid-cols-5 gap-3 px-2">
+                                <div class="col-span-2">
+                                    <input class="w-full px-3 py-2 bg-white border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Name"
+                                           type="text"
+                                           x-model="config.environmentVariables[index].key">
+                                </div>
+                                <div class="col-span-2">
+                                    <input class="w-full px-3 py-2 bg-white border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Value"
+                                           type="text"
+                                           x-model="config.environmentVariables[index].value">
+                                </div>
+                                <div class="flex justify-center">
+                                    <button @click="removeEnvironmentVariable(index)" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                                            type="button">
+                                        <svg fill="currentColor" height="16" viewBox="0 0 24 24" width="16">
+                                            <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Experimental Options -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">Experimental Options</h3>
+                            <button @click="addExperimentalOption()" class="flex items-center px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                                    type="button">
+                                <svg class="mr-1" fill="currentColor" height="16" viewBox="0 0 24 24" width="16">
+                                    <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                                </svg>
+                                Add
+                            </button>
+                        </div>
+                        <hr class="h-px my-4 bg-gray-200 border-0 dark:bg-gray-700">
+                    </div>
+
+                    <div class="space-y-3 max-h-128 overflow-y-auto">
+                        <template :key="index" x-for="(option, index) in config.experimentalOptions">
+                            <div class="grid grid-cols-5 gap-3 px-2">
+                                <div class="col-span-2">
+                                    <input class="w-full px-3 py-2 bg-white border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Name of the experimental option"
+                                           type="text"
+                                           x-model="config.experimentalOptions[index].key">
+                                </div>
+                                <div class="col-span-2">
+                                    <input class="w-full px-3 py-2 bg-white border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Value of the experimental option, which must be convertible to JSON"
+                                           type="text"
+                                           x-model="config.experimentalOptions[index].value">
+                                </div>
+                                <div class="flex justify-center">
+                                    <button @click="removeExperimentalOption(index)" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                                            type="button">
+                                        <svg fill="currentColor" height="16" viewBox="0 0 24 24" width="16">
+                                            <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <button :disabled="loading.createSession" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                            type="submit">
+                                <span class="flex items-center justify-center" x-show="!loading.createSession">
+                                    <svg class="mr-2" fill="currentColor" height="20" viewBox="0 0 24 24" width="20">
+                                        <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
+                                        <path d="M2 17L12 22L22 17"/>
+                                        <path d="M2 12L12 17L22 12"/>
+                                    </svg>
+                                    Create Session
+                                </span>
+                        <span class="flex items-center justify-center" x-cloak x-show="loading.createSession">
+                                    <svg class="animate-spin mr-2" fill="currentColor" height="20" viewBox="0 0 24 24"
+                                         width="20">
+                                        <path d="M12 6V9L16 5L12 1V4C7.58 4 4 7.58 4 12C4 13.57 4.46 15.03 5.24 16.26L6.7 14.8C6.25 13.97 6 13 6 12C6 8.69 8.69 6 12 6ZM18.76 7.74L17.3 9.2C17.75 10.03 18 11 18 12C18 15.31 15.31 18 12 18V15L8 19L12 23V20C16.42 20 20 16.42 20 12C20 10.43 19.54 8.97 18.76 7.74Z"/>
+                                    </svg>
+                                    Creating Session...
+                                </span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Active Sessions Card -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="bg-gradient-to-r from-green-600 to-teal-600 px-6 py-4">
+                <h2 class="text-xl font-semibold text-white flex items-center">
+                    <svg class="mr-2" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
+                        <path d="M3 13H5V11H3V13ZM3 17H5V15H3V17ZM3 9H5V7H3V9ZM7 13H21V11H7V13ZM7 17H21V15H7V17ZM7 7V9H21V7H7Z"/>
+                    </svg>
+                    Active Sessions
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="text-center py-8 text-gray-500" x-show="sessions.length === 0">
+                    <svg class="text-4xl mb-4" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
+                        <path d="M19 3H4.99C3.88 3 3.01 3.89 3.01 5L3 19C3 20.1 3.88 21 4.99 21H19C20.1 21 21 20.1 21 19V5C21 3.89 20.1 3 19 3ZM19 15H15C15 16.66 13.65 18 12 18C10.35 18 9 16.66 9 15H4.99V5H19V15Z"/>
+                    </svg>
+                    <p>No active sessions</p>
+                </div>
+                <div class="space-y-3">
+                    <template :key="session.id" x-for="session in sessions">
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-mono text-sm text-gray-600" x-text="session.id"></p>
+                                    <p class="text-xs text-gray-500">
+                                        Created: <span x-text="new Date(session.createdAt).toLocaleString()"></span>
+                                    </p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button :class="selectedSession === session.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                            @click="selectSession(session.id)"
+                                            class="px-3 py-1 rounded text-sm transition-colors">
+                                        Select
+                                    </button>
+                                    <button @click="deleteSession(session.id)"
+                                            class="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1 rounded text-sm transition-colors">
+                                        <svg fill="currentColor" height="1em"
+                                             viewBox="0 0 448 512" width="1em" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <button @click="fetchSessions()"
+                        class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors">
+                    <svg fill="currentColor" height="1em" viewBox="0 0 512 512" width="1em"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path d="M463.5 130.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L336 170.7c-19 19-33 40.7-43.2 64H160c-17.7 0-32-14.3-32-32s14.3-32 32-32h32c17.7 0 32-14.3 32-32s-14.3-32-32-32H160c-53 0-96 43-96 96v32c0 20.9 7.2 40.1 19.2 55.4L117.7 304H64c-17.7 0-32 14.3-32 32s14.3 32 32 32H117.7l-35.7 44.7C70.2 431.1 84.4 448 102.6 448c14.3 0 27.6-8.9 33-22.3L160 384h128c17.7 0 32 14.3 32 32s-14.3 32-32 32H160c-53 0-96-43-96-96v-32c0-20.9-7.2-40.1-19.2-55.4L32 170.7c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L176 256.7c19 19 33 40.7 43.2 64H352c17.7 0 32-14.3 32-32s-14.3-32-32-32h-32c-17.7 0-32-14.3-32-32s14.3-32 32-32h32c53 0 96 43 96 96v32c0 20.9-7.2 40.1-19.2 55.4L394.3 384H448c17.7 0 32-14.3 32-32s-14.3-32-32-32H394.3l35.7-44.7c12-15.3 19.2-34.5 19.2-55.4v-32z"/>
+                    </svg>
+                    Refresh Sessions
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

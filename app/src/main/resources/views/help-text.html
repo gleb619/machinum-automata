@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Layout -->
+<div th:fragment="help-text" th:remove="tag">
+
+    <!-- Help text -->
+    <div class="bg-gray-50 min-h-screen">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <!-- Methods Grid -->
+            <div class="p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Available Methods</h2>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                    <!-- Timing & Sleep -->
+                    <div class="bg-purple-50 p-5 rounded-lg border border-purple-200">
+                        <h3 class="text-lg font-semibold text-purple-800 mb-3 flex items-center">
+                            <span class="w-2 h-2 bg-purple-600 rounded-full mr-2"></span>
+                            Timing & Sleep
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">randomSleep(int minMs, int maxMs)</code>
+                                <p class="text-sm text-gray-600 my-2">Sleeps for a random duration between minMs and
+                                    maxMs milliseconds</p>
+
+                                <div th:replace="~{components/snippet :: snippetFromMarkup(language='Groovy', id='1')}">
+                                    <div class="code-content-1">utils.randomSleep(1000, 3000)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Element Detection -->
+                    <div class="bg-green-50 p-5 rounded-lg border border-green-200">
+                        <h3 class="text-lg font-semibold text-green-800 mb-3 flex items-center">
+                            <span class="w-2 h-2 bg-green-600 rounded-full mr-2"></span>
+                            Element Detection
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">isElementPresent(String selector)</code>
+                                <p class="text-sm text-gray-600 my-2">Returns true if element exists in DOM, false
+                                    otherwise</p>
+
+                                <div th:replace="~{components/snippet :: snippetFromMarkup(language='Groovy', id='2')}">
+                                    <div class="code-content-2">utils.isElementPresent(".submit-btn")</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wait Operations -->
+                    <div class="bg-blue-50 p-5 rounded-lg border border-blue-200">
+                        <h3 class="text-lg font-semibold text-blue-800 mb-3 flex items-center">
+                            <span class="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
+                            Wait Operations
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">waitForElement(String selector, int
+                                    timeoutSeconds = 10)</code>
+                                <p class="text-sm text-gray-600 mt-1">Waits for element to be present in DOM</p>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">waitForElementVisible(String selector, int
+                                    timeoutSeconds = 10)</code>
+                                <p class="text-sm text-gray-600 mt-1">Waits for element to be visible on page</p>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">waitForElementClickable(String selector,
+                                    int timeoutSeconds = 10)</code>
+                                <p class="text-sm text-gray-600 my-2">Waits for element to be clickable</p>
+
+                                <div th:replace="~{components/snippet :: snippetFromMarkup(language='Groovy', id='3')}">
+                                    <div class="code-content-3">utils.waitForElementClickable("#submit", 15)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Element Finding -->
+                    <div class="bg-orange-50 p-5 rounded-lg border border-orange-200">
+                        <h3 class="text-lg font-semibold text-orange-800 mb-3 flex items-center">
+                            <span class="w-2 h-2 bg-orange-600 rounded-full mr-2"></span>
+                            Element Finding
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">findElement(String selector)</code>
+                                <p class="text-sm text-gray-600 mt-1">Returns WebElement matching CSS selector</p>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">findElements(String selector)</code>
+                                <p class="text-sm text-gray-600 my-2">Returns List&lt;WebElement&gt; matching CSS
+                                    selector</p>
+
+                                <div th:replace="~{components/snippet :: snippetFromMarkup(language='Groovy', id='4')}">
+                                    <div class="code-content-4">utils.findElements(".menu-item")</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scrolling -->
+                    <div class="bg-green-50 p-5 rounded-lg border border-green-200">
+                        <h3 class="text-lg font-semibold text-green-800 mb-3 flex items-center">
+                            <span class="w-2 h-2 bg-green-600 rounded-full mr-2"></span>
+                            Scrolling
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">scrollToElement(WebElement element)</code>
+                                <p class="text-sm text-gray-600 mt-1">Scrolls element into view</p>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">scrollToTop()</code>
+                                <p class="text-sm text-gray-600 mt-1">Scrolls to top of page</p>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">scrollToBottom()</code>
+                                <p class="text-sm text-gray-600 mt-1">Scrolls to bottom of page</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- JavaScript Execution -->
+                    <div class="bg-indigo-50 p-5 rounded-lg border border-indigo-200">
+                        <h3 class="text-lg font-semibold text-indigo-800 mb-3 flex items-center">
+                            <span class="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span>
+                            JavaScript Execution
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">highlightElement(WebElement
+                                    element)</code>
+                                <p class="text-sm text-gray-600 mt-1">Adds red border to element for debugging</p>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">executeJS(String script, Object...
+                                    args)</code>
+                                <p class="text-sm text-gray-600 mt-1">Executes JavaScript and returns result</p>
+
+                                <div th:replace="~{components/snippet :: snippetFromMarkup(language='Groovy', id='5')}">
+                                    <div class="code-content-5">utils.executeJS("return document.title")</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Frame & Window Management -->
+                    <div class="bg-red-50 p-5 rounded-lg border border-red-200">
+                        <h3 class="text-lg font-semibold text-red-800 mb-3 flex items-center">
+                            <span class="w-2 h-2 bg-red-600 rounded-full mr-2"></span>
+                            Frame & Window Management
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">switchToFrame(String frameSelector)</code>
+                                <p class="text-sm text-gray-600 mt-1">Switches context to iframe</p>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">switchToDefaultContent()</code>
+                                <p class="text-sm text-gray-600 mt-1">Returns to main page context</p>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">switchToWindow(String windowHandle)</code>
+                                <p class="text-sm text-gray-600 mt-1">Switches to specific browser window</p>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">getWindowHandles()</code>
+                                <p class="text-sm text-gray-600 mt-1">Returns Set&lt;String&gt; of all window
+                                    handles</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alert Handling -->
+                    <div class="bg-yellow-50 p-5 rounded-lg border border-yellow-200">
+                        <h3 class="text-lg font-semibold text-yellow-800 mb-3 flex items-center">
+                            <span class="w-2 h-2 bg-yellow-600 rounded-full mr-2"></span>
+                            Alert Handling
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">acceptAlert()</code>
+                                <p class="text-sm text-gray-600 mt-1">Clicks OK on alert dialog</p>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">dismissAlert()</code>
+                                <p class="text-sm text-gray-600 mt-1">Clicks Cancel on alert dialog</p>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">getAlertText()</code>
+                                <p class="text-sm text-gray-600 mt-1">Returns String text from alert dialog</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Page Information -->
+                    <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                            <span class="w-2 h-2 bg-gray-600 rounded-full mr-2"></span>
+                            Page Information
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">takeScreenshot()</code>
+                                <p class="text-sm text-gray-600 mt-1">Returns String path to screenshot file</p>
+                            </div>
+                            <div class="bg-white p-3 rounded border">
+                                <code class="text-sm font-mono text-gray-800">getPageSource()</code>
+                                <p class="text-sm text-gray-600 mt-1">Returns String HTML source of current page</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Usage Notes -->
+            <div class="bg-gray-100 p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Usage Notes</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                    <div class="flex items-start">
+                        <span class="text-blue-600 mr-2">•</span>
+                        <span>All CSS selectors use standard CSS syntax (#id, .class, element, etc.)</span>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-blue-600 mr-2">•</span>
+                        <span>Default timeout for wait methods is 10 seconds</span>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-blue-600 mr-2">•</span>
+                        <span>Methods throw exceptions if elements not found (except isElementPresent)</span>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-blue-600 mr-2">•</span>
+                        <span>Class uses SLF4J logging for debug information</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

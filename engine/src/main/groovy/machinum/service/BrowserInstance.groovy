@@ -1,16 +1,15 @@
 package machinum.service
 
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import machinum.model.ChromeConfig
 import machinum.model.ScenarioResult
 import machinum.model.SessionInfo
-import groovy.transform.CompileStatic
-import groovy.util.logging.Slf4j
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.testcontainers.containers.BrowserWebDriverContainer
-import org.testcontainers.containers.GenericContainer
 
 import java.time.Duration
 import java.util.concurrent.TimeUnit
@@ -62,7 +61,7 @@ class BrowserInstance {
         long startTime = System.currentTimeMillis()
 
         try {
-            log.debug("Executing script for session {}: {}", sessionId, groovyScript.take(100))
+            log.debug("Executing script for session {}: {}...", sessionId, groovyScript.take(100))
             ScenarioEngine engine = new ScenarioEngine(this)
             Object result = engine.runScript(groovyScript, timeoutSeconds)
 
