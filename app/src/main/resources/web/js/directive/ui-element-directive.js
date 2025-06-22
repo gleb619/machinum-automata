@@ -7,6 +7,7 @@ export function initUiElementDirective() {
 
             let html = '';
             let inputElement;
+            let objId = `${element.name}-${Math.random().toString(36).slice(2)}`;
 
             switch (element.type) {
                 case 'input':
@@ -14,6 +15,7 @@ export function initUiElementDirective() {
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">${element.label || element.name}</label>
                             <input type="${element.inputType || 'text'}"
+                                   id=${objId}
                                    placeholder="${element.placeholder || ''}"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                                    ${element.required ? 'required' : ''}>
@@ -25,6 +27,7 @@ export function initUiElementDirective() {
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">${element.label || element.name}</label>
                             <textarea placeholder="${element.placeholder || ''}"
+                                      id=${objId}
                                       rows="${element.rows || 3}"
                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                                       ${element.required ? 'required' : ''}></textarea>
@@ -39,6 +42,7 @@ export function initUiElementDirective() {
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">${element.label || element.name}</label>
                             <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                    id=${objId}
                                     ${element.required ? 'required' : ''}>
                                 <option value="">Select...</option>
                                 ${options}
@@ -50,7 +54,8 @@ export function initUiElementDirective() {
                     html = `
                         <div class="flex items-center space-x-2">
                             <input type="checkbox"
-                                   class="w-4 h-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                                   class="w-4 h-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                                   id=${objId}>
                             <label class="text-sm font-medium text-gray-700">${element.label || element.name}</label>
                         </div>
                     `;
@@ -60,7 +65,7 @@ export function initUiElementDirective() {
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">${element.label || element.name}</label>
                             <div class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                                <span>${element.placeholder || 'No data'}</span>
+                                <span id=${objId}>${element.placeholder || 'No data'}</span>
                             </div>
                         </div>
                     `;
@@ -75,44 +80,112 @@ export function initUiElementDirective() {
 
             el.innerHTML = html;
 
-            // Get the input element and set up vanilla JS event handling
-            inputElement = el.querySelector('input, textarea, select');
-
-            if (inputElement && element.source) {
-                // Get the source object from Alpine's scope
-                const sourceObj = Alpine.$data(el.closest('[x-data]'))[element.source];
-
-                if (sourceObj) {
-                    // Set initial value
+            const handleRefresh = (event) => {
+                const alpineComponent = el.closest('[x-data]');
+                const sourceObj = Alpine.$data(alpineComponent)[element.source];
+                if (element.type === 'display') {
+                    el.querySelector('span').textContent = sourceObj[element.name] || element.placeholder || 'No data';
+                } else {
                     if (element.type === 'checkbox') {
                         inputElement.checked = sourceObj[element.name] || false;
                     } else {
                         inputElement.value = sourceObj[element.name] || '';
                     }
+                }
+            };
 
-                    // Handle value changes
-                    const updateSource = () => {
-                        if (element.type === 'checkbox') {
-                            sourceObj[element.name] = inputElement.checked;
-                        } else {
-                            sourceObj[element.name] = inputElement.value;
+            if(element.source) {
+                // Get the input element and set up vanilla JS event handling
+                inputElement = el.querySelector('input, textarea, select');
+
+                if (inputElement) {
+                    // Get the source object from Alpine's scope
+                    const alpineComponent = el.closest('[x-data]');
+                    const sourceObj = Alpine.$data(alpineComponent)[element.source];
+
+                    if (sourceObj) {
+                        // Set initial value
+                        const updateInputValue = () => {
+                            if (element.type === 'checkbox') {
+                                inputElement.checked = sourceObj[element.name] || false;
+                            } else {
+                                inputElement.value = sourceObj[element.name] || '';
+                            }
+                        };
+
+                        updateInputValue();
+
+                        // Handle value changes from input to source
+                        const updateSource = () => {
+                            if (element.type === 'checkbox') {
+                                sourceObj[element.name] = inputElement.checked;
+                            } else {
+                                sourceObj[element.name] = inputElement.value;
+                            }
+                        };
+
+                        inputElement.addEventListener('input', updateSource);
+                        inputElement.addEventListener('change', updateSource);
+
+                        // Listen for external changes to source data
+                        const observer = new MutationObserver(() => {
+                            updateInputValue();
+                        });
+
+                        // Watch for changes in the source object
+                        if (typeof Proxy !== 'undefined') {
+                            const watchEffect = Alpine.effect(() => {
+                                // Access the property to register dependency
+                                const value = sourceObj[element.name];
+                                updateInputValue();
+                            });
+
+                            // Store cleanup function
+                            if (!el._x_cleanups) el._x_cleanups = [];
+                            el._x_cleanups.push(watchEffect);
                         }
+                    }
+                }
+
+                // Handle display elements
+                if (element.type === 'display') {
+                    const alpineComponent = el.closest('[x-data]');
+                    const sourceObj = Alpine.$data(alpineComponent)[element.source];
+                    const displaySpan = el.querySelector('span');
+
+                    const updateDisplayValue = () => {
+                        displaySpan.textContent = sourceObj[element.name] || element.placeholder || 'No data';
                     };
 
-                    inputElement.addEventListener('input', updateSource);
-                    inputElement.addEventListener('change', updateSource);
-                }
-            }
+                    if (sourceObj && displaySpan) {
+                        updateDisplayValue();
 
-            // Handle display elements
-            if (element.type === 'display' && element.source) {
-                const sourceObj = Alpine.$data(el.closest('[x-data]'))[element.source];
-                const displaySpan = el.querySelector('span');
+                        // Listen for external changes to source data
+                        if (typeof Proxy !== 'undefined') {
+                            const watchEffect = Alpine.effect(() => {
+                                // Access the property to register dependency
+                                const value = sourceObj[element.name];
+                                updateDisplayValue();
+                            });
 
-                if (sourceObj && displaySpan) {
-                    displaySpan.textContent = sourceObj[element.name] || element.placeholder || 'No data';
+                            // Store cleanup function
+                            if (!el._x_cleanups) el._x_cleanups = [];
+                            el._x_cleanups.push(watchEffect);
+                        }
+                    }
                 }
+
+                document.addEventListener('ui-element-refresh', handleRefresh);
             }
+        });
+
+        // Cleanup function
+        cleanup(() => {
+            if (el._x_cleanups) {
+                el._x_cleanups.forEach(cleanupFn => cleanupFn());
+                el._x_cleanups = [];
+            }
+            document.removeEventListener('ui-element-refresh', handleRefresh);
         });
     });
 }
