@@ -1,11 +1,12 @@
 package machinum.service
 
+
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import machinum.exception.SessionExpiredException
 import machinum.exception.SessionNotFoundException
 import machinum.model.ChromeConfig
 import machinum.model.SessionInfo
-import groovy.transform.CompileStatic
-import groovy.util.logging.Slf4j
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -20,6 +21,11 @@ class ContainerManagerService {
     private final Map<String, BrowserInstance> activeInstances = new ConcurrentHashMap<>()
     private final ScheduledExecutorService cleanupExecutor = Executors.newSingleThreadScheduledExecutor()
     private final AtomicInteger sessionCounter = new AtomicInteger(0)
+    private final String recordingDirectory
+
+    ContainerManagerService(String recordingDirectory) {
+        this.recordingDirectory = recordingDirectory
+    }
 
     void init() {
         // Cleanup inactive sessions every 5 minutes
@@ -33,8 +39,10 @@ class ContainerManagerService {
 
         try {
             log.info("Creating browser instance for session: {}", sessionId)
-            BrowserInstance instance = new BrowserInstance(sessionId, config)
-            instance.initialize()
+            BrowserInstance instance = new BrowserInstance(sessionId, config.toBuilder()
+                    .recordingDirectory(recordingDirectory)
+                    .build())
+                    .initialize()
             activeInstances.put(sessionId, instance)
             log.info("Browser instance created successfully: {}", sessionId)
             return sessionId
@@ -66,10 +74,6 @@ class ContainerManagerService {
 
     List<SessionInfo> getActiveSessions() {
         return activeInstances.values().collect { it.getSessionInfo() }
-    }
-
-    int getActiveSessionCount() {
-        return activeInstances.size()
     }
 
     private void cleanupStaleInstances() {

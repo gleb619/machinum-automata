@@ -23,14 +23,33 @@ export function utilsApp() {
         this[name] = !!currValue;
       },
 
+      backupValue(name, newValue) {
+        const valueToStore = typeof newValue === 'object' ? JSON.stringify(newValue) : newValue;
+        localStorage.setItem(name, valueToStore);
+      },
+
       changeValue(name, newValue) {
-        localStorage.setItem(name, newValue);
+        const valueToStore = typeof newValue === 'object' ? JSON.stringify(newValue) : newValue;
+        localStorage.setItem(name, valueToStore);
         this[name] = newValue;
       },
 
+      receiveValue(name, defaultValue) {
+          const currValue = localStorage.getItem(name);
+          try {
+            return JSON.parse(currValue) || defaultValue;
+          } catch (e) {
+            return currValue || defaultValue;
+          }
+      },
+    
       loadValue(name, defaultValue) {
         const currValue = localStorage.getItem(name);
-        this[name] = currValue || defaultValue;
-      }
+        try {
+          this[name] = JSON.parse(currValue) || defaultValue;
+        } catch (e) {
+          this[name] = currValue || defaultValue;
+        }
+      },
   }
 }

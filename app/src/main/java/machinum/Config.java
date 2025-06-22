@@ -13,6 +13,8 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 @Slf4j
 public class Config implements Extension {
 
+    public static final String RECORDING_DIRECTORY_PARAM = "app.recording-directory";
+
     @Override
     public void install(@NotNull Jooby application) throws Exception {
         changeLogLevel(App.class.getPackageName(), Level.DEBUG);
@@ -26,7 +28,8 @@ public class Config implements Extension {
             }
         });
 
-        registry.putIfAbsent(ContainerManagerService.class, new ContainerManagerService());
+        var recordingDirectory = config.getString(RECORDING_DIRECTORY_PARAM);
+        registry.putIfAbsent(ContainerManagerService.class, new ContainerManagerService(recordingDirectory));
 
         application.onStarted(() -> {
             application.require(ContainerManagerService.class).init();

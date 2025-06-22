@@ -1,5 +1,6 @@
 package machinum.service
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.openqa.selenium.By
 import org.openqa.selenium.JavascriptExecutor
@@ -10,6 +11,7 @@ import org.openqa.selenium.support.ui.WebDriverWait
 import java.time.Duration
 
 @Slf4j
+@CompileStatic
 class ScenarioUtils {
 
     private final BrowserInstance browserInstance

@@ -4,6 +4,9 @@ const startTime = new Date().getTime();
 import { initApp } from './init.js';
 import { utilsApp } from './core.js';
 import { automationApp } from './automation.js';
+import { editorApp } from './editor.js';
+import { uiConfigApp } from './ui-config.js';
+import { initUiElementDirective } from './directive/ui-element-directive.js'
 
 /**
  * Creates the main application with combined functionality
@@ -18,6 +21,8 @@ export function app() {
                 ...Object.getOwnPropertyDescriptors(initApp()),
                 ...Object.getOwnPropertyDescriptors(utilsApp()),
                 ...Object.getOwnPropertyDescriptors(automationApp()),
+                ...Object.getOwnPropertyDescriptors(editorApp()),
+                ...Object.getOwnPropertyDescriptors(uiConfigApp()),
             }
         );
     } catch(e) {
@@ -33,6 +38,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     const elapsedTime = currentTime - startTime;
     const remainingTime = Math.max(10, 500 - elapsedTime);
 
+    initUiElementDirective();
     Alpine.data('app', app);
     Alpine.start();
 

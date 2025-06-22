@@ -28,13 +28,8 @@ export function automationApp() {
         acceptInsecureCerts: true,
         pageLoadStrategy: 'EAGER'
     },
-    script: {
-        code: '',
-        timeout: 60
-    },
     sessions: [],
-    selectedSession: null,
-    executionResults: [],
+    selectedSession: undefined,
     health: {
         activeSessions: 0
     },
@@ -46,10 +41,10 @@ export function automationApp() {
     // Templates
     templates: TEMPLATES,
 
-    // Initialization
-    init() {
+    initAutomation() {
         this.fetchHealth();
         this.fetchSessions();
+        this.loadValue('config', this.config);
     },
 
     // API Methods
@@ -87,6 +82,7 @@ export function automationApp() {
                 this.fetchSessions();
                 this.fetchHealth();
                 this.selectedSession = result.id;
+                this.backupValue('config', this.config);
             } else {
                 throw new Error(`HTTP ${response.status}`);
             }
@@ -102,6 +98,9 @@ export function automationApp() {
             const response = await fetch('/api/sessions');
             if (response.ok) {
                 this.sessions = await response.json();
+                if(!this.selectedSession && this.sessions.length > 0) {
+                    this.selectSession(this.sessions[0].id);
+                }
             }
         } catch (error) {
             this.showToast(`Failed to fetch sessions: ${error.message}`, true);
@@ -126,50 +125,6 @@ export function automationApp() {
             }
         } catch (error) {
             this.showToast(`Failed to delete session: ${error.message}`, true);
-        }
-    },
-
-    async executeScript() {
-        if (!this.selectedSession) return;
-
-        this.loading.executeScript = true;
-        const startTime = Date.now();
-
-        try {
-            const response = await fetch(`/api/sessions/${this.selectedSession}/execute`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    script: this.script.code,
-                    timeout: this.script.timeout
-                })
-            });
-
-            const result = await response.json();
-            const duration = Date.now() - startTime;
-
-            this.executionResults.push({
-                timestamp: new Date(),
-                success: response.ok,
-                data: result,
-                duration: duration
-            });
-
-            if (response.ok) {
-                this.showToast('Script executed successfully!');
-            } else {
-                this.showToast('Script execution failed!', true);
-            }
-        } catch (error) {
-            this.executionResults.push({
-                timestamp: new Date(),
-                success: false,
-                data: { error: error.message },
-                duration: Date.now() - startTime
-            });
-            this.showToast(`Execution error: ${error.message}`, true);
-        } finally {
-            this.loading.executeScript = false;
         }
     },
 
@@ -214,14 +169,10 @@ export function automationApp() {
         this.config.experimentalOptions.splice(index, 1);
     },
 
-    loadTemplate(templateName) {
-        this.script.code = this.templates[templateName];
-        this.showToast(`Template "${templateName}" loaded`);
-    },
-
   };
 }
 
+//TODO move to editor.js
 const TEMPLATES = {
 
     navigation: `driver.get("https://httpbin.org")

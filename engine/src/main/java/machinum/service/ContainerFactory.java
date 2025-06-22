@@ -1,9 +1,11 @@
 package machinum.service;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import machinum.model.ChromeConfig;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.testcontainers.containers.BrowserWebDriverContainer;
+import org.testcontainers.containers.VncRecordingContainer;
 
 import java.io.File;
 import java.time.Duration;
@@ -12,8 +14,12 @@ import java.util.Map;
 @Slf4j
 public class ContainerFactory {
 
+    @SneakyThrows
     public static BrowserWebDriverContainer<?> createChromeContainer(ChromeConfig config) {
-        File recordingDirectory = new File("build");
+        var recordingDirectory = new File(config.getRecordingDirectory())
+                .getCanonicalFile()
+                .getAbsoluteFile();
+
         if(!recordingDirectory.exists()) {
             recordingDirectory.mkdirs();
             log.info("Created recording folder: {}", recordingDirectory.getAbsolutePath());
@@ -22,7 +28,8 @@ public class ContainerFactory {
         var container = new BrowserWebDriverContainer()
                 .withRecordingMode(
                         BrowserWebDriverContainer.VncRecordingMode.valueOf(config.getRecordingMode()),
-                        new File(config.getRecordingDirectory())
+                        recordingDirectory,
+                        VncRecordingContainer.VncRecordingFormat.MP4
                 )
                 .withCapabilities(buildChromeOptions(config));
 

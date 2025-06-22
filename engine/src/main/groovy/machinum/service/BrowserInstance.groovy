@@ -10,8 +10,10 @@ import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.testcontainers.containers.BrowserWebDriverContainer
+import org.testcontainers.lifecycle.TestDescription
 
 import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -21,18 +23,20 @@ class BrowserInstance {
 
     private final String sessionId
     private final ChromeConfig config
-    private BrowserWebDriverContainer container
-    private WebDriver driver
     private final long createdAt = System.currentTimeMillis()
     private final AtomicInteger executionCount = new AtomicInteger(0)
+
     private volatile long lastAccessTime = System.currentTimeMillis()
+
+    private BrowserWebDriverContainer container
+    private WebDriver driver
 
     BrowserInstance(String sessionId, ChromeConfig config) {
         this.sessionId = sessionId
         this.config = config
     }
 
-    void initialize() {
+    BrowserInstance initialize() {
         log.info("Initializing browser instance: {}", sessionId)
 
         container = ContainerFactory.createChromeContainer(config)
@@ -40,6 +44,14 @@ class BrowserInstance {
 
         log.info("Selenium URL for session {}: {}", sessionId, container.getSeleniumAddress())
 
+        initDriver()
+
+        log.info("Browser instance initialized successfully: {}", sessionId)
+
+        return this
+    }
+
+    private BrowserInstance initDriver() {
         RemoteWebDriver remoteDriver = new RemoteWebDriver(
                 container.getSeleniumAddress(),
                 ContainerFactory.buildChromeOptions(config)
@@ -51,25 +63,30 @@ class BrowserInstance {
         remoteDriver.manage().timeouts().scriptTimeout(Duration.ofSeconds(config.scriptTimeoutSeconds))
 
         this.driver = remoteDriver
-        log.info("Browser instance initialized successfully: {}", sessionId)
+
+        return this
     }
 
-    ScenarioResult executeScript(String groovyScript, int timeoutSeconds = 60) {
+    ScenarioResult executeScript(String groovyScript, Map<String, Object> params, int timeoutSeconds = 60) {
+        if (this.driver == null) {
+            initDriver()
+        }
+
         lastAccessTime = System.currentTimeMillis()
         executionCount.incrementAndGet()
 
-        long startTime = System.currentTimeMillis()
+        Instant start = Instant.now()
+        def videoFileName = "${groovyScript.md5()}-${System.nanoTime()}"
 
         try {
-            log.debug("Executing script for session {}: {}...", sessionId, groovyScript.take(100))
-            ScenarioEngine engine = new ScenarioEngine(this)
-            Object result = engine.runScript(groovyScript, timeoutSeconds)
+            log.debug("Executing script for session {}: [{}] {}...", sessionId, groovyScript.md5(), groovyScript.replaceAll("\n", " ").take(100))
+            def parameters = params ?: Collections.<String, Object> emptyMap()
+            ScenarioEngine engine = new ScenarioEngine(this, parameters)
+            def result = engine.runScript(groovyScript, videoFileName, timeoutSeconds)
 
-            long executionTime = System.currentTimeMillis() - startTime
-            log.info("Script execution completed for session {} in {}ms", sessionId, executionTime)
+            log.info("Script execution completed for session {} in {}s", sessionId, Duration.between(start, Instant.now()).toSeconds())
 
-            return ScenarioResult.success(result, executionTime)
-
+            return ScenarioResult.success(result, videoFileName, start)
         } catch (Exception e) {
             log.error("Script execution failed for session {}: {}", sessionId, e.message, e)
             String screenshot = null
@@ -79,8 +96,10 @@ class BrowserInstance {
                 log.warn("Failed to capture screenshot for session {}", sessionId)
             }
 
-            long executionTime = System.currentTimeMillis() - startTime
-            return ScenarioResult.failure(e.message, screenshot, executionTime)
+            return ScenarioResult.failure(e.message, screenshot, videoFileName, start)
+        } finally {
+            //TODO maybe, we should clean driver?
+            this.driver = null
         }
     }
 
@@ -136,5 +155,32 @@ class BrowserInstance {
             log.warn("Error stopping container for session {}: {}", sessionId, e.message)
         }
     }
-    
+
+    @Override
+    String toString() {
+        return "BrowserInstance{" +
+                "container=" + container.getSeleniumAddress() +
+                '}'
+    }
+
+    void saveVideo(String hash) {
+        container.afterTest(createDescription(hash), Optional.empty())
+    }
+
+    private TestDescription createDescription(String hash) {
+        return new TestDescription() {
+
+            @Override
+            String getTestId() {
+                return "${BrowserInstance.this.getClass()}-${hash}"
+            }
+
+            @Override
+            String getFilesystemFriendlyName() {
+                return hash
+            }
+
+        }
+    }
+
 }

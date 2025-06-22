@@ -2,8 +2,8 @@ package machinum.model;
 
 import lombok.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.time.Duration;
+import java.time.Instant;
 
 @Data
 @AllArgsConstructor
@@ -15,25 +15,25 @@ public class ScenarioResult {
     private String error;
     private Object data;
     private String screenshot;
-    private long executionTimeMs;
+    private String videoFile;
+    private long executionTime;
 
-    @Builder.Default
-    private Map<String, Object> metadata = new HashMap<>();
-
-    public static ScenarioResult success(Object data, long executionTimeMs) {
+    public static ScenarioResult success(Object data, String video, Instant start) {
         return ScenarioResult.builder()
                 .success(true)
                 .data(data)
-                .executionTimeMs(executionTimeMs)
+                .executionTime(Duration.between(start, Instant.now()).toSeconds())
+                .videoFile(video)
                 .build();
     }
 
-    public static ScenarioResult failure(String error, String screenshot, long executionTimeMs) {
+    public static ScenarioResult failure(String error, String screenshot, String video, Instant start) {
         return ScenarioResult.builder()
                 .success(false)
                 .error(error)
                 .screenshot(screenshot)
-                .executionTimeMs(executionTimeMs)
+                .executionTime(Duration.between(start, Instant.now()).toSeconds())
+                .videoFile(video)
                 .build();
     }
 
