@@ -51,5 +51,10 @@ export function utilsApp() {
           this[name] = currValue || defaultValue;
         }
       },
+
+      jsonStringify(value) {
+        return JSON.stringify(value, null, 2);
+      }
+
   }
 }

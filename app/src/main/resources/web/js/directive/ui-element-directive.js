@@ -15,7 +15,8 @@ export function initUiElementDirective() {
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">${element.label || element.name}</label>
                             <input type="${element.inputType || 'text'}"
-                                   id=${objId}
+                                   id="${objId}"
+                                   data-id="${element.name}"
                                    placeholder="${element.placeholder || ''}"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                                    ${element.required ? 'required' : ''}>
@@ -27,7 +28,8 @@ export function initUiElementDirective() {
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">${element.label || element.name}</label>
                             <textarea placeholder="${element.placeholder || ''}"
-                                      id=${objId}
+                                      id="${objId}"
+                                      data-id="${element.name}"
                                       rows="${element.rows || 3}"
                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                                       ${element.required ? 'required' : ''}></textarea>
@@ -42,7 +44,8 @@ export function initUiElementDirective() {
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">${element.label || element.name}</label>
                             <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                                    id=${objId}
+                                    id="${objId}"
+                                    data-id="${element.name}"
                                     ${element.required ? 'required' : ''}>
                                 <option value="">Select...</option>
                                 ${options}
@@ -55,7 +58,8 @@ export function initUiElementDirective() {
                         <div class="flex items-center space-x-2">
                             <input type="checkbox"
                                    class="w-4 h-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                                   id=${objId}>
+                                   id="${objId}"
+                                   data-id="${element.name}">
                             <label class="text-sm font-medium text-gray-700">${element.label || element.name}</label>
                         </div>
                     `;
@@ -65,7 +69,7 @@ export function initUiElementDirective() {
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">${element.label || element.name}</label>
                             <div class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                                <span id=${objId}>${element.placeholder || 'No data'}</span>
+                                <span id="${objId}" data-id="${element.name}">${element.placeholder || 'No data'}</span>
                             </div>
                         </div>
                     `;

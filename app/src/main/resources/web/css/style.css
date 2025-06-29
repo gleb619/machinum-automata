@@ -40,3 +40,23 @@
 svg {
     display: inline-block;
 }
+
+.search-match {
+    background-color: #fde047;
+    padding: 0 2px;
+    border-radius: 2px;
+    outline: 1px solid #facc15;
+}
+
+.line-error {
+     background-color: #fee2e2;
+     color: #b91c1c;
+     font-weight: bold;
+     display: block;
+     margin: 0 -12px;
+     padding: 0 12px;
+}
+
+.caret-black {
+    caret-color: #000000;
+}

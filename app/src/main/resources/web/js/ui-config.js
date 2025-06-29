@@ -196,7 +196,7 @@ export function uiConfigApp() {
             ]
         };
 
-        this.uiConfig = JSON.stringify(examples[type] || [], null, 2);
+        this.script.uiConfig = this.jsonStringify(examples[type] || []);
         this.uiData = {};
         examples[type]?.forEach(element => {
             this.uiData[element.name] = element.type === 'checkbox' ? false : '';
@@ -237,9 +237,9 @@ export function uiConfigApp() {
 
         const element = elementExamples[type];
         if (element) {
-            const tempArray = JSON.parse(this.uiConfig || '[]') || [];
+            const tempArray = JSON.parse(this.script.uiConfig || '[]') || [];
             tempArray.push(element);
-            this.uiConfig = JSON.stringify(tempArray, null, 2);
+            this.script.uiConfig = this.jsonStringify(tempArray);
             this.uiData[element.name] = element.type === 'checkbox' ? false : '';
         }
     }

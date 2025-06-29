@@ -20,7 +20,7 @@ public class ChromeConfig {
     private List<String> arguments = new ArrayList<>();
 
     @Builder.Default
-    private boolean headless = true;
+    private boolean headless = false;
 
     @Builder.Default
     private int timeoutSeconds = 30;
@@ -40,7 +40,11 @@ public class ChromeConfig {
     private String recordingMode = "RECORD_ALL";
 
     @Builder.Default
+    @Deprecated(forRemoval = true)
     private String recordingDirectory = "./recordings";
+
+    @Builder.Default
+    private String reportDirectory = "./html-reports";
 
     @Builder.Default
     private Map<String, String> environmentVariables = new HashMap<>();

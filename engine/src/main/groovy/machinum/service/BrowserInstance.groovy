@@ -1,6 +1,7 @@
 package machinum.service
 
 import groovy.transform.CompileStatic
+import groovy.transform.Synchronized
 import groovy.util.logging.Slf4j
 import machinum.model.ChromeConfig
 import machinum.model.ScenarioResult
@@ -14,45 +15,50 @@ import org.testcontainers.lifecycle.TestDescription
 
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 @Slf4j
 @CompileStatic
 class BrowserInstance {
 
-    private final String sessionId
-    private final ChromeConfig config
     private final long createdAt = System.currentTimeMillis()
     private final AtomicInteger executionCount = new AtomicInteger(0)
+    private final AtomicBoolean started = new AtomicBoolean(false)
+
+    private final String sessionId
+    private final ChromeConfig config
+    private final CacheMediator cacheMediator
 
     private volatile long lastAccessTime = System.currentTimeMillis()
 
     private BrowserWebDriverContainer container
     private WebDriver driver
 
-    BrowserInstance(String sessionId, ChromeConfig config) {
+    BrowserInstance(CacheMediator cacheMediator, String sessionId, ChromeConfig config) {
         this.sessionId = sessionId
         this.config = config
+        this.cacheMediator = cacheMediator
     }
 
     BrowserInstance initialize() {
         log.info("Initializing browser instance: {}", sessionId)
 
         container = ContainerFactory.createChromeContainer(config)
-        container.start()
-
-        log.info("Selenium URL for session {}: {}", sessionId, container.getSeleniumAddress())
-
-        initDriver()
 
         log.info("Browser instance initialized successfully: {}", sessionId)
 
         return this
     }
 
-    private BrowserInstance initDriver() {
-        RemoteWebDriver remoteDriver = new RemoteWebDriver(
+    private RemoteWebDriver initDriver() {
+        log.info("Prepare to create selenium driver to work with {}: {}", sessionId, container.getSeleniumAddress())
+
+        def remoteDriver = new RemoteWebDriver(
                 container.getSeleniumAddress(),
                 ContainerFactory.buildChromeOptions(config)
         )
@@ -62,26 +68,39 @@ class BrowserInstance {
         remoteDriver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(config.pageLoadTimeoutSeconds))
         remoteDriver.manage().timeouts().scriptTimeout(Duration.ofSeconds(config.scriptTimeoutSeconds))
 
-        this.driver = remoteDriver
-
-        return this
+        return remoteDriver
     }
 
+    @Synchronized
+    //TODO add container recreation on driver exception
     ScenarioResult executeScript(String groovyScript, Map<String, Object> params, int timeoutSeconds = 60) {
+        log.info("Prepare to execute script {}", sessionId)
+
+        if (!container.isRunning()) {
+            CompletableFuture.runAsync {
+                container.start()
+                started.getAndSet(Boolean.TRUE)
+            }.get(config.scriptTimeoutSeconds, TimeUnit.SECONDS)
+            log.info("Container has been started {} - {}", sessionId, container.getContainerId())
+        }
+
         if (this.driver == null) {
-            initDriver()
+            this.driver = CompletableFuture.supplyAsync {
+                initDriver()
+            }.get(config.scriptTimeoutSeconds, TimeUnit.SECONDS)
+            log.info("Create driver, selenium URL for session {}: {}", sessionId, container.getSeleniumAddress())
         }
 
         lastAccessTime = System.currentTimeMillis()
         executionCount.incrementAndGet()
 
-        Instant start = Instant.now()
+        def start = Instant.now()
         def videoFileName = "${groovyScript.md5()}-${System.nanoTime()}"
 
         try {
             log.debug("Executing script for session {}: [{}] {}...", sessionId, groovyScript.md5(), groovyScript.replaceAll("\n", " ").take(100))
             def parameters = params ?: Collections.<String, Object> emptyMap()
-            ScenarioEngine engine = new ScenarioEngine(this, parameters)
+            def engine = new ScenarioEngine(this, cacheMediator, parameters)
             def result = engine.runScript(groovyScript, videoFileName, timeoutSeconds)
 
             log.info("Script execution completed for session {} in {}s", sessionId, Duration.between(start, Instant.now()).toSeconds())
@@ -89,17 +108,22 @@ class BrowserInstance {
             return ScenarioResult.success(result, videoFileName, start)
         } catch (Exception e) {
             log.error("Script execution failed for session {}: {}", sessionId, e.message, e)
-            String screenshot = null
+            String screenshot
             try {
                 screenshot = takeScreenshot()
             } catch (Exception ignored) {
+                screenshot = null
                 log.warn("Failed to capture screenshot for session {}", sessionId)
             }
 
-            return ScenarioResult.failure(e.message, screenshot, videoFileName, start)
-        } finally {
-            //TODO maybe, we should clean driver?
-            this.driver = null
+            def pageHtml = capturePageHtml()
+            def htmlFile = CompletableFuture.supplyAsync {
+                def file = new File(config.getReportDirectory(), "${this.driver.getCurrentUrl().md5()}-${System.currentTimeMillis()}.html")
+                file.write(pageHtml, "UTF-8")
+                return file.getName()
+            }.get(config.scriptTimeoutSeconds, TimeUnit.SECONDS)
+
+            return ScenarioResult.failure(e.message, screenshot, videoFileName, htmlFile, start)
         }
     }
 
@@ -108,7 +132,31 @@ class BrowserInstance {
             byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES)
             return Base64.getEncoder().encodeToString(screenshot)
         }
+
         return null
+    }
+
+    //TODO should we add the script code here?
+    String capturePageHtml() {
+        try {
+            def driver = getDriver()
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))
+            String currentUrl = driver.getCurrentUrl()
+            String pageTitle = driver.getTitle()
+            String pageSource = driver.getPageSource()
+
+            StringBuilder htmlCapture = new StringBuilder()
+            htmlCapture.append("<!-- ERROR CAPTURE REPORT -->\n")
+            htmlCapture.append("<!-- Timestamp: ${timestamp} -->\n")
+            htmlCapture.append("<!-- URL: ${currentUrl} -->\n")
+            htmlCapture.append("<!-- Page Title: ${pageTitle} -->\n")
+            htmlCapture.append("<!-- ======================== -->\n\n")
+            htmlCapture.append(pageSource)
+
+            return htmlCapture.toString()
+        } catch (Exception captureError) {
+            return "<!-- FAILED TO CAPTURE PAGE HTML -->\n<!-- Capture Error: ${captureError.getMessage()} -->"
+        }
     }
 
     String getPageSource() {
@@ -122,12 +170,24 @@ class BrowserInstance {
 
     boolean isAlive() {
         try {
-            return container?.isRunning() &&
-                    (System.currentTimeMillis() - lastAccessTime) < TimeUnit.HOURS.toMillis(2)
+            if (started.get()) {
+                return container?.isRunning() &&
+                        (System.currentTimeMillis() - lastAccessTime) < TimeUnit.MINUTES.toMillis(10)
+            } else {
+                return true
+            }
         } catch (Exception e) {
             log.warn("Error checking if session {} is alive: {}", sessionId, e.message)
             return false
         }
+    }
+
+    String getSessionId() {
+        return sessionId
+    }
+
+    ChromeConfig getConfig() {
+        return config
     }
 
     SessionInfo getSessionInfo() {
@@ -164,11 +224,7 @@ class BrowserInstance {
     }
 
     void saveVideo(String hash) {
-        container.afterTest(createDescription(hash), Optional.empty())
-    }
-
-    private TestDescription createDescription(String hash) {
-        return new TestDescription() {
+        container.afterTest(new TestDescription() {
 
             @Override
             String getTestId() {
@@ -180,7 +236,7 @@ class BrowserInstance {
                 return hash
             }
 
-        }
+        }, Optional.empty())
     }
 
 }

@@ -34,3 +34,4 @@ app/src/main/generated/*
 engine/build/
 engine/out/*
 engine/src/main/generated/*
+scripts/*.json

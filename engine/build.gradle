@@ -24,6 +24,7 @@ dependencies {
     implementation 'org.seleniumhq.selenium:selenium-java:4.15.0'
     implementation 'org.testcontainers:selenium:1.19.3'
     implementation 'org.kohsuke:groovy-sandbox:1.19'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.3'
 
     // test
     testImplementation "org.junit.jupiter:junit-jupiter-api:5.11.4"

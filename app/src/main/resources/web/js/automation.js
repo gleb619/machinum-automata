@@ -1,6 +1,5 @@
 export function automationApp() {
   return {
-
     config: {
         version: 'latest',
         arguments: [
@@ -23,7 +22,7 @@ export function automationApp() {
             {key: 'LANGUAGE', value: 'ru_RU'}
         ],
         experimentalOptions: [
-            {key: 'prefs', value: '{"intl.accept_languages":"ru,ru_RU","intl.selected_languages":"ru,ru_RU"}'}
+            {key: 'prefs', value: '{\n "intl.accept_languages":"ru,ru_RU",\n "intl.selected_languages":"ru,ru_RU" }'}
         ],
         acceptInsecureCerts: true,
         pageLoadStrategy: 'EAGER'
@@ -38,8 +37,6 @@ export function automationApp() {
         executeScript: false
     },
 
-    // Templates
-    templates: TEMPLATES,
 
     initAutomation() {
         this.fetchHealth();
@@ -171,52 +168,3 @@ export function automationApp() {
 
   };
 }
-
-//TODO move to editor.js
-const TEMPLATES = {
-
-    navigation: `driver.get("https://httpbin.org")
-utils.waitForElement("h1")
-return [title: driver.getTitle(), url: driver.getCurrentUrl()]`,
-
-    form: `driver.get("https://httpbin.org/forms/post")
-driver.findElement(By.name("custname")).sendKeys("Test User")
-utils.randomSleep(500, 1000)
-driver.findElement(By.cssSelector("input[type='submit']")).click()
-return [success: true, screenshot: utils.takeScreenshot()]`,
-
-
-    complex: `try {
-driver.get("https://httpbin.org")
-
-if (utils.isElementPresent("#login-form")) {
-def usernameField = driver.findElement(By.id("username"))
-usernameField.sendKeys("testuser")
-
-utils.randomSleep(200, 500)
-
-def submitButton = driver.findElement(By.cssSelector("button[type='submit']"))
-utils.scrollToElement(submitButton)
-submitButton.click()
-
-utils.waitForElement(".success-message", 10)
-return [status: "login_success", screenshot: utils.takeScreenshot()]
-} else {
-return [status: "no_login_form"]
-}
-} catch (Exception e) {
-return [status: "error", message: e.message, screenshot: utils.takeScreenshot()]
-}`,
-
-
-    screenshot: `driver.get("https://httpbin.org")
-utils.waitForPageLoad()
-def screenshot = utils.takeScreenshot()
-return [
-title: driver.getTitle(),
-url: driver.getCurrentUrl(),
-screenshot: screenshot,
-timestamp: new Date().toString()
-]`
-
-};

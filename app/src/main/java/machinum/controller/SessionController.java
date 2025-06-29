@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import machinum.model.ChromeConfig;
 import machinum.model.ScenarioResult;
 import machinum.model.SessionInfo;
-import machinum.service.ContainerManagerService;
+import machinum.service.ContainerManager;
 
 import java.io.File;
 import java.util.Arrays;
@@ -24,9 +24,13 @@ import static machinum.Config.RECORDING_DIRECTORY_PARAM;
 @RequiredArgsConstructor
 public class SessionController {
 
-    private final ContainerManagerService containerManager;
+    private final ContainerManager containerManager;
     private final String recordingDirectory;
 
+
+    public static SessionController_ sessionController(Jooby application) {
+        return new SessionController_(application.require(ContainerManager.class), application.getConfig().getString(RECORDING_DIRECTORY_PARAM));
+    }
 
     @POST("/sessions")
     public SessionResponse createSession(ChromeConfig config, Context ctx) {
@@ -47,11 +51,29 @@ public class SessionController {
         ctx.setResponseCode(StatusCode.NO_CONTENT);
     }
 
-    public static SessionController_ sessionController(Jooby application) {
-        return new SessionController_(application.require(ContainerManagerService.class), application.getConfig().getString(RECORDING_DIRECTORY_PARAM));
+    @GET("/health")
+    public HealthResponse health() {
+        return new HealthResponse(containerManager.getActiveSessions().size());
     }
 
-    private static File getLastModified(String directoryFilePath, String hash) {
+    @POST("/sessions/{id}/execute")
+    public ScenarioResult startSession(@PathParam("id") String id, StartRequest request) {
+        var instance = containerManager.getInstance(id);
+        return instance.executeScript(request.script(), request.params(), request.timeout());
+    }
+
+    @GET("/video/{fileName}")
+    public void startSession(@PathParam("fileName") String fileName, Context context) {
+        File file = getLastModified(recordingDirectory, fileName);
+        if (Objects.nonNull(file) && file.exists()) {
+            context.send(file.toPath());
+            return;
+        }
+
+        context.setResponseCode(404);
+    }
+
+    private File getLastModified(String directoryFilePath, String hash) {
         var directory = new File(directoryFilePath);
         var array = directory.listFiles(File::isFile);
         var files = Arrays.stream(Objects.requireNonNull(array))
@@ -71,33 +93,13 @@ public class SessionController {
         return chosenFile;
     }
 
-    @GET("/health")
-    public HealthResponse health() {
-        return new HealthResponse(containerManager.getActiveSessions().size());
+    record SessionResponse(String id) {
     }
 
-    @POST("/sessions/{id}/execute")
-    public ScenarioResult startSession(@PathParam("id") String id, StartRequest request) {
-        var instance = containerManager.getInstance(id);
-        return instance.executeScript(request.script(), request.params(), request.timeout());
+    record HealthResponse(int activeSessions) {
     }
 
-    record SessionResponse(String id) {}
-
-    record HealthResponse(int activeSessions) {}
-
-    @GET("/video/{fileName}")
-    public void startSession(@PathParam("fileName") String fileName, Context context) {
-        File file = getLastModified(recordingDirectory, fileName);
-        if (Objects.nonNull(file) && file.exists()) {
-            context.send(file.toPath());
-            return;
-        }
-
-        context.setResponseCode(404);
-    }
-
-    record StartRequest(String script, int timeout, Map<String, Object> params) {
+    public record StartRequest(String script, int timeout, Map<String, Object> params) {
     }
 
 }

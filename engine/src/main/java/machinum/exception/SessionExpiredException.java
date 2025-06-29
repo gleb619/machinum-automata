@@ -6,4 +6,8 @@ public class SessionExpiredException extends AppException {
         super("Session expired: " + sessionId);
     }
 
+    public SessionExpiredException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

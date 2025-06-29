@@ -25,13 +25,14 @@ public class ContainerFactory {
             log.info("Created recording folder: {}", recordingDirectory.getAbsolutePath());
         }
 
-        var container = new BrowserWebDriverContainer()
+        var container = new BrowserWebDriverContainer<>()
                 .withRecordingMode(
                         BrowserWebDriverContainer.VncRecordingMode.valueOf(config.getRecordingMode()),
                         recordingDirectory,
                         VncRecordingContainer.VncRecordingFormat.MP4
                 )
-                .withCapabilities(buildChromeOptions(config));
+                .withCapabilities(buildChromeOptions(config))
+                .withReuse(true);
 
         for (Map.Entry<String, String> env : config.getEnvironmentVariables().entrySet()) {
             container.withEnv(env.getKey(), env.getValue());

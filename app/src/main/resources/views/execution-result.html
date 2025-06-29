@@ -6,12 +6,12 @@
 
     <!-- Execution Results Card -->
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
-         x-show="executionResults.length > 0">
+         x-cloak x-show="executionResults.length > 0">
         <div class="bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-4">
             <div class="flex justify-between items-center">
                 <h2 class="text-xl font-semibold text-white flex items-center">
                     <!--<i class="fas fa-terminal mr-2"></i>Execution Results-->
-                    <svg class="mr-2" height="16" viewBox="0 0 576 512" width="16">
+                    <svg class="mr-2" fill="currentColor" height="16" viewBox="0 0 576 512" width="16">
                         <path d="M9.4 86.6C-3.1 74.1-3.1 53.9 9.4 41.4s32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L178.7 256 9.4 86.6zM256 416H544c17.7 0 32 14.3 32 32s-14.3 32-32 32H256c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/>
                     </svg>
                     Execution Results
@@ -19,9 +19,13 @@
 
                 <button @click="executionResults = []"
                         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    <svg fill="currentColor" height="1em" viewBox="0 0 24 24" width="1em"
-                         xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19.78 2.22a.75.75 0 0 0-1.06 0L12 8.94 5.28 2.22a.75.75 0 0 0-1.06 1.06L10.94 10 4.22 16.72a.75.75 0 1 0 1.06 1.06L12 11.06l6.72 6.72a.75.75 0 1 0 1.06-1.06L13.06 10l6.72-6.72a.75.75 0 0 0 0-1.06zM19.5 19H4.5c-.83 0-1.5.67-1.5 1.5S3.67 22 4.5 22h15c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
+                    <svg fill="none" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 9L15 15" stroke="#fff" stroke-linecap="round" stroke-linejoin="round"
+                              stroke-width="2"/>
+                        <path d="M15 9L9 15" stroke="#fff" stroke-linecap="round" stroke-linejoin="round"
+                              stroke-width="2"/>
+                        <circle cx="12" cy="12" r="9" stroke="#fff" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="2"/>
                     </svg>
                     Clean
                 </button>
@@ -37,11 +41,11 @@
                                 <span :class="result.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
                                       class="px-2 py-1 rounded-full text-xs font-medium">
                                     <svg class="mr-1" height="16" viewBox="0 0 448 512"
-                                         width="16" x-show="result.success">
+                                         width="16" x-cloak x-show="result.success">
                                         <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/>
                                     </svg>
                                     <svg class="mr-1" height="16" viewBox="0 0 384 512"
-                                         width="16" x-show="!result.success">
+                                         width="16" x-cloak x-show="!result.success">
                                         <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/>
                                     </svg>
                                     <span x-text="result.success ? 'Success' : 'Error'"></span>
@@ -50,9 +54,9 @@
                                       x-text="new Date(result.timestamp).toLocaleString()"></span>
                             </div>
                             <span class="text-xs text-gray-500">
-                                <span class="mr-2" x-text="`Duration: ${result.duration}s`"></span>
+                                <span x-text="`Duration: ${result.duration}s, `"></span>
                                 <span class="text-gray-300 hover:text-gray-500"
-                                      x-text="`, server ${result.executionTime}s`"></span>
+                                      x-text="`server ${result.executionTime}s`"></span>
                             </span>
                         </div>
                         <div class="bg-gray-50 rounded-lg p-3 overflow-x-auto" x-data="{ activeResultTab: 'pre' }">
@@ -64,32 +68,47 @@
                                 <button :class="{ 'border-b-2 border-blue-500 text-blue-600': activeResultTab === 'img' }"
                                         @click="activeResultTab = 'img'"
                                         class="inline-flex p-4 text-sm font-medium cursor-pointer"
-                                        x-show="result.data?.screenshot">Image
+                                        x-cloak x-show="result.data?.screenshot">Image
                                 </button>
                                 <button :class="{ 'border-b-2 border-blue-500 text-blue-600': activeResultTab === 'video' }"
                                         @click="activeResultTab = 'video'"
-                                        class="inline-flex p-4 text-sm font-medium cursor-pointer">Video
+                                        class="inline-flex p-4 text-sm font-medium cursor-pointer"
+                                        x-cloak x-show="result?.videoFile">Video
+                                </button>
+                                <button :class="{ 'border-b-2 border-blue-500 text-blue-600': activeResultTab === 'html-page' }"
+                                        @click="activeResultTab = 'html-page'"
+                                        class="inline-flex p-4 text-sm font-medium cursor-pointer"
+                                        x-cloak x-show="result?.htmlFile">Html Page
                                 </button>
                             </div>
-                            <div x-show="activeResultTab === 'pre'">
-                                    <pre class="text-sm text-gray-800 whitespace-pre-wrap p-4"
-                                         x-text="JSON.stringify(result.data, null, 2)"></pre>
+                            <div class="max-h-64" x-cloak x-show="activeResultTab === 'pre'">
+                                <pre class="text-sm text-gray-800 whitespace-pre-wrap p-4"
+                                     x-text="JSON.stringify(result.data, null, 2)"></pre>
                             </div>
                             <div x-cloak x-show="activeResultTab === 'img'">
                                 <img :src="`data:image/png;base64, ${result.screenshot}`"
-                                     class="h-auto max-w-ful rounded-md mt-4" x-show="result.screenshot">
+                                     class="h-auto max-w-ful rounded-md mt-4" x-cloak x-show="result.screenshot">
                             </div>
-                            <div x-cloak x-show="activeResultTab === 'video'">
-                                <video class="w-full video-js vjs-default-skin"
-                                       controls data-setup='{"example_option":true}' height="480" poster="http://example.com/preview-poster.svg"
-                                       preload="auto"
+                            <template x-if="activeResultTab === 'video' && result?.videoFile">
+                                <video class="w-full"
+                                       controls
+                                       height="480"
+                                       poster="http://example.com/preview-poster.svg"
                                        th:poster="@{~/images/preview-poster.svg}"
                                        width="640"
-                                       x-show="result.videoFile">
+                                       preload="none">
                                     <source :src="`/api/video/${result.videoFile}`" src="videos/example.mp4"
                                             type="video/mp4">
                                 </video>
-                            </div>
+                            </template>
+                            <template x-if="activeResultTab === 'html-page' && result?.htmlFile">
+                                <iframe
+                                        :src="`/api/html/${result.htmlFile}`"
+                                        class="w-full h-full"
+                                        sandbox="allow-same-origin"
+                                        src="https://example.com">
+                                </iframe>
+                            </template>
                         </div>
                     </div>
                 </template>

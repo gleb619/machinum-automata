@@ -2,11 +2,14 @@ package machinum.service
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import machinum.exception.AppException
+import machinum.exception.SessionExpiredException
 import org.apache.groovy.internal.util.UncheckedThrow
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.SecureASTCustomizer
 import org.openqa.selenium.By
 import org.openqa.selenium.Keys
+import org.openqa.selenium.NoSuchSessionException
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 
@@ -23,7 +26,7 @@ class ScenarioEngine {
     private final GroovyShell shell
     private final Instant start = Instant.now()
 
-    ScenarioEngine(BrowserInstance browserInstance, Map<String, Object> params) {
+    ScenarioEngine(BrowserInstance browserInstance, CacheMediator cacheMediator, Map<String, Object> params) {
         this.browserInstance = browserInstance
 
         // Secure binding with limited scope
@@ -34,8 +37,9 @@ class ScenarioEngine {
                 Keys: Keys,
                 WebDriverWait: WebDriverWait,
                 ExpectedConditions: ExpectedConditions,
-                log               : log,
-                params            : params
+                log   : log,
+                params: params,
+                cache : cacheMediator,
         ])
 
         // Create sandboxed shell with security restrictions
@@ -71,8 +75,9 @@ class ScenarioEngine {
         future.whenComplete { result, ex ->
             def duration = Duration.between(start, Instant.now())
             if (duration.toMinutes() < 6) {
-                //TODO move to async
-                browserInstance.saveVideo(videoFileName)
+                CompletableFuture.runAsync {
+                    browserInstance.saveVideo(videoFileName)
+                }
             }
 
             if (Objects.nonNull(ex)) {
@@ -84,9 +89,14 @@ class ScenarioEngine {
         try {
             return future.get(timeoutSeconds, TimeUnit.SECONDS)
         } catch (ExecutionException e) {
-            throw new RuntimeException("Got execution error: ${e.getMessage()}", e.getCause() != null ? e.getCause() : e)
-        } catch (TimeoutException e) {
-            throw new RuntimeException("Script execution timeout after ${timeoutSeconds} seconds")
+            def cause = e.getCause()
+            if (cause instanceof NoSuchSessionException) {
+                throw new SessionExpiredException("Got execution error: ${e.getMessage()}", cause != null ? cause : e)
+            } else {
+                throw new AppException("Got execution error: ${e.getMessage()}", cause != null ? cause : e)
+            }
+        } catch (TimeoutException ignore) {
+            throw new AppException("Script execution timeout after ${timeoutSeconds} seconds")
         } finally {
             executor.shutdown()
             try {

@@ -5,7 +5,7 @@
 <div th:fragment="help-text" th:remove="tag">
 
     <!-- Help text -->
-    <div class="bg-gray-50 min-h-screen">
+    <div class="bg-gray-50 min-h-screen" x-cloak x-show="activeEditorTab === 'script'">
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
             <!-- Methods Grid -->
             <div class="p-6">

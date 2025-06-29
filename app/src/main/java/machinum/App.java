@@ -1,20 +1,20 @@
 package machinum;
 
 import ch.qos.logback.classic.Level;
-import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.info.Info;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.jooby.Jooby;
 import io.jooby.MapModelAndView;
+import io.jooby.OpenAPIModule;
 import io.jooby.handler.AssetHandler;
 import io.jooby.handler.AssetSource;
 import io.jooby.jackson.JacksonModule;
 import io.jooby.jetty.JettyServer;
-import io.jooby.OpenAPIModule;
 import io.jooby.thymeleaf.ThymeleafModule;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import machinum.exception.AppException;
 import org.slf4j.Logger;
@@ -22,7 +22,9 @@ import org.slf4j.Logger;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import static machinum.Config.HTML_REPORTS_PARAM;
 import static machinum.Config.changeLogLevel;
+import static machinum.controller.ScriptController.scriptController;
 import static machinum.controller.SessionController.sessionController;
 import static machinum.util.Util.hasCause;
 
@@ -76,8 +78,11 @@ public class App extends Jooby {
     install(new Config());
 
     mvc(sessionController(this));
+      mvc(scriptController(this));
 
     get("/", ctx -> new MapModelAndView("index.html", Map.of()));
+
+      assets("/api/html/*", Paths.get(getConfig().getString(HTML_REPORTS_PARAM)));
 
     AssetSource web = AssetSource.create(Paths.get("app/src/main/resources/web"));
     assets("/?*", new AssetHandler("index.html", web));

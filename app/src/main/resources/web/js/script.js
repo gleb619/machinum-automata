@@ -7,6 +7,7 @@ import { automationApp } from './automation.js';
 import { editorApp } from './editor.js';
 import { uiConfigApp } from './ui-config.js';
 import { initUiElementDirective } from './directive/ui-element-directive.js'
+import { initCodeEditorDirective } from './directive/code-editor-directive.js'
 
 /**
  * Creates the main application with combined functionality
@@ -39,6 +40,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     const remainingTime = Math.max(10, 500 - elapsedTime);
 
     initUiElementDirective();
+    initCodeEditorDirective();
     Alpine.data('app', app);
     Alpine.start();
 

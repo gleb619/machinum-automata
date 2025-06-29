@@ -4,6 +4,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.openqa.selenium.By
 import org.openqa.selenium.JavascriptExecutor
+import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
@@ -12,13 +13,18 @@ import java.time.Duration
 
 @Slf4j
 @CompileStatic
+@SuppressWarnings("unused")
 class ScenarioUtils {
 
-    private final BrowserInstance browserInstance
     private final Random random = new Random()
+    private final BrowserInstance browserInstance
 
     ScenarioUtils(BrowserInstance browserInstance) {
         this.browserInstance = browserInstance
+    }
+
+    void open(String url) {
+        driver.get("https://www.deepl.com/en/translator#en/ru/i%20see%20you")
     }
 
     void randomSleep(int minMs, int maxMs) {
@@ -28,7 +34,7 @@ class ScenarioUtils {
 
     boolean isElementPresent(String selector) {
         try {
-            browserInstance.getDriver().findElement(By.cssSelector(selector))
+            driver.findElement(By.cssSelector(selector))
             return true
         } catch (NoSuchElementException e) {
             return false
@@ -36,18 +42,23 @@ class ScenarioUtils {
     }
 
     void waitForElement(String selector, int timeoutSeconds = 10) {
-        WebDriverWait wait = new WebDriverWait(browserInstance.getDriver(), Duration.ofSeconds(timeoutSeconds))
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds))
         wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
     }
 
     void waitForElementVisible(String selector, int timeoutSeconds = 10) {
-        WebDriverWait wait = new WebDriverWait(browserInstance.getDriver(), Duration.ofSeconds(timeoutSeconds))
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds))
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(selector)))
     }
 
     void waitForElementClickable(String selector, int timeoutSeconds = 10) {
-        WebDriverWait wait = new WebDriverWait(browserInstance.getDriver(), Duration.ofSeconds(timeoutSeconds))
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds))
         wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector(selector)))
+    }
+
+    void waitForElementText(String selector, String text, int timeoutSeconds = 10) {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds))
+        wait.until(ExpectedConditions.textToBePresentInElementLocated(By.cssSelector(selector), text))
     }
 
     String takeScreenshot() {
@@ -59,8 +70,7 @@ class ScenarioUtils {
     }
 
     void scrollToElement(WebElement element) {
-        ((JavascriptExecutor) browserInstance.getDriver())
-                .executeScript("arguments[0].scrollIntoView(true);", element)
+        executeJS("arguments[0].scrollIntoView(true);", element)
     }
 
     void scrollToTop() {
@@ -72,7 +82,11 @@ class ScenarioUtils {
     }
 
     Object executeJS(String script, Object... args) {
-        return ((JavascriptExecutor) browserInstance.getDriver()).executeScript(script, args)
+        if (driver instanceof JavascriptExecutor) {
+            return ((JavascriptExecutor) driver).executeScript(script, args)
+        }
+
+        return null
     }
 
     void highlightElement(WebElement element) {
@@ -80,40 +94,63 @@ class ScenarioUtils {
     }
 
     List<WebElement> findElements(String selector) {
-        return browserInstance.getDriver().findElements(By.cssSelector(selector))
+        return driver.findElements(By.cssSelector(selector))
     }
 
     WebElement findElement(String selector) {
-        return browserInstance.getDriver().findElement(By.cssSelector(selector))
+        return driver.findElement(By.cssSelector(selector))
     }
 
     void switchToFrame(String frameSelector) {
         WebElement frame = findElement(frameSelector)
-        browserInstance.getDriver().switchTo().frame(frame)
+        driver.switchTo().frame(frame)
     }
 
     void switchToDefaultContent() {
-        browserInstance.getDriver().switchTo().defaultContent()
+        driver.switchTo().defaultContent()
     }
 
     void switchToWindow(String windowHandle) {
-        browserInstance.getDriver().switchTo().window(windowHandle)
+        driver.switchTo().window(windowHandle)
     }
 
     Set<String> getWindowHandles() {
-        return browserInstance.getDriver().getWindowHandles()
+        return driver.getWindowHandles()
     }
 
     void acceptAlert() {
-        browserInstance.getDriver().switchTo().alert().accept()
+        driver.switchTo().alert().accept()
     }
 
     void dismissAlert() {
-        browserInstance.getDriver().switchTo().alert().dismiss()
+        driver.switchTo().alert().dismiss()
     }
 
     String getAlertText() {
-        return browserInstance.getDriver().switchTo().alert().getText()
+        return driver.switchTo().alert().getText()
+    }
+
+    String capturePageHtml() {
+        return browserInstance.capturePageHtml()
+    }
+
+    void changePageTitle(String newTitle) {
+        executeJS("document.title = arguments[0];", newTitle)
+    }
+
+    void logDebug(String text, Object... args) {
+        changePageTitle("${text.take(30)}...")
+        log.debug(text, args)
+    }
+
+    void logDebug(String text) {
+        logDebug(text, new Object[0])
+    }
+
+    /* ========= */
+
+    private WebDriver getDriver() {
+        return browserInstance.getDriver()
     }
 
 }

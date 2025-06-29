@@ -1,14 +1,13 @@
 export function editorApp() {
   return {
     activeEditorTab: 'script',
-    script: {
-      code: '',
-      timeout: 60
-    },
+    script: {},
+    scriptBackup: {},
     executionResults: [],
+    // Templates
+    templates: TEMPLATES,
 
     // UI Driven stuff
-    uiConfig: '',
     parsedUIConfig: [],
     uiData: {},
     uiConfigValid: false,
@@ -16,44 +15,100 @@ export function editorApp() {
 
     // Script Management
     scriptName: '',
-    selectedSavedScript: '',
-    savedScripts: [],
+    scripts: [],
     searchQuery: '',
-    filteredScripts: [],
+    isUpdating: false,
+
+    headerMode: 'list',
 
     initEditor() {
-        this.loadValue('script', this.script);
+        this.resetScript();
+        //this.loadValue('script', this.script);
+        //this.loadValue('scriptId', undefined);
         this.loadValue('activeEditorTab', this.activeEditorTab);
-        this.uiConfig = JSON.stringify(this.receiveValue('uiConfig', undefined), null, 2);
-        this.validateUIConfig();
-        this.tryParseUIConfig();
+//        this.script.uiConfig = JSON.stringify(this.receiveValue('script', undefined), null, 2);
+        this.fetchScriptsOnStart();
     },
 
+    resetScript() {
+        this.script = {
+          id: '',
+          name: '',
+          text: '',
+          timeout: 60,
+          uiConfig: ''
+        };
+    },
+
+    async fetchScriptsOnStart() {
+        await this.fetchScripts();
+        if(this.scripts.length > 0) {
+            const scriptId = this.loadValue('scriptId', undefined);
+            if(scriptId) {
+                const script = this.scripts.find(item => item.id === scriptId);
+                this.setScript(script);
+            } else {
+                this.setScript(this.scripts[0]);
+            }
+
+            this.validateUIConfig();
+            this.tryParseUIConfig();
+        } else {
+            this.headerMode = 'create';
+        }
+    },
+    
     loadTemplate(templateName) {
-        this.script.code = this.templates[templateName];
+        this.script.text = this.templates[templateName];
         this.showToast(`Template "${templateName}" loaded`);
     },
 
-    async executeScript() {
-        if (!this.selectedSession) return;
+    async validateScriptApi(code, language) {
+        try {
+            const response = await fetch('/api/scripts/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code })
+            });
 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.errors && Array.isArray(result.errors)) {
+                return {
+                    errors: result.errors.map(e => ({
+                        line: e.line || 0,
+                        message: e.message || 'Unknown'
+                    }))
+                };
+            }
+
+            return { errors: [] };
+        } catch (error) {
+            console.warn('API call error:', error);
+            return { errors: [{ line: 0, message: 'Failed to validate script' }] };
+        }
+    },
+
+    async executeScriptBase(url, body) {
         this.loading.executeScript = true;
         const startTime = Date.now();
 
         try {
-            const response = await fetch(`/api/sessions/${this.selectedSession}/execute`, {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    script: this.script.code,
-                    timeout: this.script.timeout,
-                    params: this.uiData,
-                })
+                body: JSON.stringify(body)
             });
 
             const result = await response.json();
             const duration = Date.now() - startTime;
-            const { screenshot, videoFile, ...executionResult } = result;
+            const { screenshot, videoFile, htmlFile, ...executionResult } = result;
 
             this.executionResults.unshift({
                 timestamp: new Date(),
@@ -61,6 +116,7 @@ export function editorApp() {
                 data: executionResult,
                 screenshot: screenshot || '',
                 videoFile: videoFile || '',
+                htmlFile: htmlFile || '',
                 executionTime: result.executionTime,
                 duration: duration / 1000
             });
@@ -79,115 +135,174 @@ export function editorApp() {
                 data: { error: error.message },
                 duration: Date.now() - startTime
             });
+            console.error('API call error:', error);
             this.showToast(`Execution error: ${error.message}`, true);
         } finally {
             this.loading.executeScript = false;
         }
     },
 
+    async executeScript() {
+        if (!this.selectedSession) return;
+
+        await this.executeScriptBase(`/api/sessions/${this.selectedSession}/execute`, {
+          script: this.script.text,
+          timeout: this.script.timeout,
+          params: this.uiData,
+       });
+    },
+
+    async executeScriptById() {
+        await this.executeScriptBase(`/api/scripts/${this.script.id}/execute`, {
+            params: this.uiData,
+        });
+    },
+
     get uiResult() {
-        //return (this.executionResults.length > 0 ? this.executionResults[0] : { data: '' })?.data;
-        return {
-            "translated_text": "\"У нас еще есть храбрые греки! Они сражались бок о бок с нами!\" Кир Младший посмотрел направо, где греческая тяжелая пехота начала свой медленный строй. Увидев это, он почувствовал уверенность: \"Нас не остановить! Мы непобедимы!!!\"\n«За победу!» - первым крикнул Артапатус, затем все закричали друг за другом: «За победу!!!»\nПодняв боевой дух, Сайрус Младший поднял правую руку: \"Друзья! Воины! После этой победы я клянусь Маздой, верховным богом, что сделаю все возможное, чтобы отплатить вам за вашу дружбу и преданность!!!\""
-        };
+        return (this.executionResults.length > 0 ? this.executionResults[0] : { data: { data: {} } })?.data?.data;
     },
 
-    // Storage Management
-    loadFromStorage() {
-        const stored = localStorage.getItem('groovyWorkplace');
-        if (stored) {
-            const data = JSON.parse(stored);
-            this.script = data.script || this.script;
-            this.uiConfig = data.uiConfig || '';
-            this.selectedSession = data.selectedSession || '';
-            this.parseUIConfig();
-        }
-    },
-
-    saveToStorage() {
-        localStorage.setItem('groovyWorkplace', JSON.stringify({
-            script: this.script,
-            uiConfig: this.uiConfig,
-            selectedSession: this.selectedSession
-        }));
-    },
-
-    // Session Management
-    async refreshSessions() {
+    // Script Management (API Driven)
+    async fetchScripts() {
         try {
-            const response = await fetch('/api/sessions');
-            this.sessions = await response.json();
+            const response = await fetch(`/api/scripts`);
+            if (!response.ok) throw new Error('Network response was not ok.');
+            this.scripts = await response.json();
         } catch (error) {
-            this.showToast('Failed to load sessions', true);
+            console.error('Failed to load scripts:', error);
+            this.showToast('Failed to load scripts.', true);
+            this.scripts = [];
         }
     },
 
-    // Script Management
-    async loadSavedScripts() {
+    async saveScript(newName) {
+        if (!this.scriptName.trim() || !this.script.text.trim()) return;
+
+        this.validateUIConfig();
+        if(!this.uiConfigValid) return;
+
+
+        const { name, uiConfig, ...scriptData } = this.script;
+        scriptData.name = newName;
+        scriptData.uiConfig = JSON.parse(uiConfig);
+
         try {
-            const stored = localStorage.getItem('savedScripts');
-            this.savedScripts = stored ? JSON.parse(stored) : [];
-            this.filteredScripts = [...this.savedScripts];
+            const response = await fetch(`/api/scripts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(scriptData),
+            });
+
+            if (!response.ok) throw new Error('Failed to save script on the server.');
+            
+            this.scriptName = '';
+            this.showToast('Script saved successfully!');
+            const data = await response.json();
+            this.setScript(data);
+            await this.fetchScripts(); // Refresh list from server
         } catch (error) {
-            this.savedScripts = [];
-            this.filteredScripts = [];
+            console.error('Save script error:', error);
+            this.showToast('Error saving script.', true);
         }
     },
 
-    async saveScript() {
-        if (!this.scriptName || !this.script.code) return;
+    async updateScript() {
+        this.validateUIConfig();
+        const dataChanged = !(this.scriptBackup.id == this.script.id &&
+            this.scriptBackup.name == this.script.name &&
+            this.scriptBackup.text == this.script.text &&
+            this.scriptBackup.timeout == this.script.timeout &&
+            this.scriptBackup.uiConfig == this.script.uiConfig);
 
-        const scriptData = {
-            id: Date.now().toString(),
-            name: this.scriptName,
-            code: this.script.code,
-            timeout: this.script.timeout,
-            uiConfig: this.uiConfig,
-            createdAt: new Date().toISOString()
-        };
+        if(!dataChanged || !this.uiConfigValid) return;
 
-        this.savedScripts.push(scriptData);
-        localStorage.setItem('savedScripts', JSON.stringify(this.savedScripts));
-        this.filteredScripts = [...this.savedScripts];
-        this.scriptName = '';
-        this.showToast('Script saved successfully!');
-    },
+        if (this.isUpdating) return Promise.reject(new Error('Update is already in progress.'));
 
-    async loadScript() {
-        const script = this.savedScripts.find(s => s.id === this.selectedSavedScript);
-        if (script) {
-            this.script.code = script.code;
-            this.script.timeout = script.timeout;
-            this.uiConfig = script.uiConfig || '';
-            this.parseUIConfig();
-            this.saveToStorage();
-            this.showToast('Script loaded successfully!');
+        this.isUpdating = true;
+
+        const { uiConfig, ...scriptData } = this.script;
+        scriptData.uiConfig = JSON.parse(uiConfig || '[]');
+
+        try {
+            const response = await fetch(`/api/scripts/${this.script.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(scriptData),
+            });
+
+            if (!response.ok) throw new Error('Failed to update script on the server.');
+
+            const data = await response.json();
+            this.setScript(data);
+        } catch (error) {
+            console.error('Update script error:', error);
+            this.showToast('Error updating script.', true);
+        } finally {
+          setTimeout(() => { this.isUpdating = false; }, 5000);
         }
     },
 
-    async deleteScript() {
-        this.savedScripts = this.savedScripts.filter(s => s.id !== this.selectedSavedScript);
-        localStorage.setItem('savedScripts', JSON.stringify(this.savedScripts));
-        this.filteredScripts = [...this.savedScripts];
-        this.selectedSavedScript = '';
-        this.showToast('Script deleted successfully!');
+    async loadScript(scriptId) {
+        try {
+            const response = await fetch(`/api/scripts/${scriptId}`);
+            if (!response.ok) throw new Error('Script not found.');
+            
+            const scriptToLoad = await response.json();
+            this.setScript(scriptToLoad);
+            
+            this.showToast(`Script "${scriptToLoad.name}" loaded.`);
+        } catch (error) {
+            console.error('Load script error:', error);
+            this.showToast('Error loading script.', true);
+        }
     },
 
-    filterScripts() {
+    async deleteScript(scriptId) {
+        if (!confirm('Are you sure you want to delete this script?')) return;
+        
+        try {
+            const response = await fetch(`/api/scripts/${scriptId}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) throw new Error('Failed to delete script on the server.');
+            
+            this.showToast('Script deleted successfully!');
+            await this.fetchScripts();
+            this.resetScript();
+        } catch (error) {
+            console.error('Delete script error:', error);
+            this.showToast('Error deleting script.', true);
+        }
+    },
+
+    get filteredScripts() {
         if (!this.searchQuery) {
-            this.filteredScripts = [...this.savedScripts];
+            return [...this.scripts];
         } else {
-            this.filteredScripts = this.savedScripts.filter(script =>
-                script.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+            const lowerCaseQuery = this.searchQuery.toLowerCase();
+            return this.scripts.filter(script =>
+                script.name.toLowerCase().includes(lowerCaseQuery)
             );
         }
     },
 
+    setScript(data) {
+        const { uiConfig, ...rest } = data;
+        this.script = {...rest};
+        this.script.uiConfig = this.jsonStringify(uiConfig);
+        this.scriptBackup = JSON.parse(this.jsonStringify(this.script));
+    },
+    
     validateUIConfig() {
         try {
-            JSON.parse(this.uiConfig);
-            this.uiConfigValid = true;
-            this.uiConfigError = '';
+            const temp = JSON.parse(this.script.uiConfig);
+            this.uiConfigValid = Array.isArray(temp);
+            if(this.uiConfigValid) {
+                this.uiConfigError = '';
+            } else {
+                this.uiConfigError = 'Object is not an array!';
+            }
         } catch (error) {
             this.uiConfigValid = false;
             this.uiConfigError = error.message;
@@ -210,7 +325,7 @@ export function editorApp() {
 
     parseUIConfig() {
         try {
-            this.parsedUIConfig = this.uiConfig ? JSON.parse(this.uiConfig) : [];
+            this.parsedUIConfig = this.script.uiConfig ? JSON.parse(this.script.uiConfig) : [];
             this.uiConfigValid = true;
             this.uiConfigError = '';
 
@@ -228,65 +343,83 @@ export function editorApp() {
     },
 
     // UI Data Management
-    bindResultData(resultData) {
-        Object.keys(resultData).forEach(key => {
-            if (key in this.uiData) {
-                this.uiData[key] = resultData[key];
-            }
-        });
-        this.showToast('Result data bound to UI!');
-    },
-
     clearUIData() {
         this.parsedUIConfig.forEach(element => {
             this.uiData[element.name] = element.defaultValue || '';
         });
-        this.showToast('UI data cleared!');
+        this.$dispatch('ui-element-refresh');
     },
 
     get curlExample() {
         if(!this.selectedSession) return '';
         const request = {
-            script: this.script.code,
+            script: this.script.text,
             timeout: this.script.timeout,
             params: this.uiData
         };
-        return formatCurlCommand(`curl -X POST ${window.location.origin}/api/sessions/${this.selectedSession}/execute -H 'Content-Type: application/json' -d '${JSON.stringify(request, null, 2)}'`);
-    }
+        return `curl -X POST ${window.location.origin}/api/sessions/${this.selectedSession}/execute \\
+  -H 'Content-Type: application/json' \\
+  -d '${JSON.stringify(request)}'`;
+    },
+
+    get curlExampleById() {
+        if(!this.script?.id) return '';
+        const request = {
+            params: this.uiData
+        };
+        return `curl -X POST ${window.location.origin}/scripts/${this.script.id}/execute \\
+  -H 'Content-Type: application/json' \\
+  -d '${JSON.stringify(request)}'`;
+    },
 
   }
 };
 
-function formatCurlCommand(rawCurl) {
-  if (!rawCurl || typeof rawCurl !== 'string') {
-    return '';
-  }
+//TODO move to editor.js
+const TEMPLATES = {
 
-  const parts = rawCurl.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || [];
+    navigation: `driver.get("https://httpbin.org")
+utils.waitForElement("h1")
+return [title: driver.getTitle(), url: driver.getCurrentUrl()]`,
 
-  if (parts.length < 2) {
-    return rawCurl;
-  }
+    form: `driver.get("https://httpbin.org/forms/post")
+driver.findElement(By.name("custname")).sendKeys("Test User")
+utils.randomSleep(500, 1000)
+driver.findElement(By.cssSelector("input[type='submit']")).click()
+return [success: true, screenshot: utils.takeScreenshot()]`,
 
-  const lines = [parts[0]];
-  let lastPartWasAnOption = false;
 
-  for (let i = 1; i < parts.length; i++) {
-    const part = parts[i];
-    const isOption = part.startsWith('-');
+    complex: `try {
+driver.get("https://httpbin.org")
 
-    if (isOption) {
-      lines.push(` \\\n  ${part}`);
-      lastPartWasAnOption = true;
-    } else {
-      if (lastPartWasAnOption) {
-        lines[lines.length - 1] += ` ${part}`;
-      } else {
-        lines[0] += ` ${part}`;
-      }
-      lastPartWasAnOption = false;
-    }
-  }
+if (utils.isElementPresent("#login-form")) {
+def usernameField = driver.findElement(By.id("username"))
+usernameField.sendKeys("testuser")
 
-  return lines.join('');
+utils.randomSleep(200, 500)
+
+def submitButton = driver.findElement(By.cssSelector("button[type='submit']"))
+utils.scrollToElement(submitButton)
+submitButton.click()
+
+utils.waitForElement(".success-message", 10)
+return [status: "login_success", screenshot: utils.takeScreenshot()]
+} else {
+return [status: "no_login_form"]
 }
+} catch (Exception e) {
+return [status: "error", message: e.message, screenshot: utils.takeScreenshot()]
+}`,
+
+
+    screenshot: `driver.get("https://httpbin.org")
+utils.waitForPageLoad()
+def screenshot = utils.takeScreenshot()
+return [
+title: driver.getTitle(),
+url: driver.getCurrentUrl(),
+screenshot: screenshot,
+timestamp: new Date().toString()
+]`
+
+};
