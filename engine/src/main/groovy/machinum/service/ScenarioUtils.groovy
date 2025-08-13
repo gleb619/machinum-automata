@@ -17,9 +17,9 @@ import java.time.Duration
 class ScenarioUtils {
 
     private final Random random = new Random()
-    private final BrowserInstance browserInstance
+    private final LocalBrowserInstance browserInstance
 
-    ScenarioUtils(BrowserInstance browserInstance) {
+    ScenarioUtils(LocalBrowserInstance browserInstance) {
         this.browserInstance = browserInstance
     }
 
@@ -151,6 +151,11 @@ class ScenarioUtils {
 
     private WebDriver getDriver() {
         return browserInstance.getDriver()
+    }
+
+    //No operations class, for remote instance
+    static class Noop {
+
     }
 
 }

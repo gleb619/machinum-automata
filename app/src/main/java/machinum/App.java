@@ -22,8 +22,8 @@ import org.slf4j.Logger;
 import java.nio.file.Paths;
 import java.util.Map;
 
-import static machinum.Config.HTML_REPORTS_PARAM;
-import static machinum.Config.changeLogLevel;
+import static machinum.Config.*;
+import static machinum.controller.RemoteController.remoteController;
 import static machinum.controller.ScriptController.scriptController;
 import static machinum.controller.SessionController.sessionController;
 import static machinum.util.Util.hasCause;
@@ -55,7 +55,7 @@ public class App extends Jooby {
 
     error((ctx, cause, statusCode) -> {
       // Log the error
-      log.error("ERROR: path=%s, status=%s, message=%s".formatted(ctx.path(), ctx.getResponseCode(), cause.getMessage()), cause);
+      log.error("ERROR: path=%s, status=%s, message=%s".formatted(ctx.getRequestPath(), ctx.getResponseCode(), cause.getMessage()), cause);
       ctx.setResponseCode(statusCode);
       ctx.setResponseHeader("Content-Type", "application/json");
       var message = hasCause(cause, AppException.class) ? cause.getMessage() : "An unexpected error occurred, please check logs";
@@ -65,26 +65,30 @@ public class App extends Jooby {
       ));
     });
 
-    before(ctx -> log.info("> {}", ctx.getRequestPath()));
+    before(ctx -> log.info("> {} {}", ctx.getMethod(), ctx.getRequestPath()));
 
     after((ctx, result, failure) -> {
+      int value = ctx.getResponseCode().value() == 0 ? 200 : ctx.getResponseCode().value();
       if (failure == null) {
-        log.info("< {} {}", ctx.getRequestPath(), ctx.getResponseCode().value());
+        log.info("< {} {} {}", ctx.getMethod(), ctx.getRequestPath(), value);
       } else {
-        log.error("[X] {} {}", ctx.getRequestPath(), ctx.getResponseCode(), failure);
+        log.error("[X] {} {} {}", ctx.getMethod(), ctx.getRequestPath(), value, failure);
       }
     });
 
     install(new Config());
 
     mvc(sessionController(this));
-      mvc(scriptController(this));
+    mvc(scriptController(this));
+    mvc(remoteController(this));
 
     get("/", ctx -> new MapModelAndView("index.html", Map.of()));
 
-      assets("/api/html/*", Paths.get(getConfig().getString(HTML_REPORTS_PARAM)));
+    get("/health", ctx -> Map.of("success", true));
 
-    AssetSource web = AssetSource.create(Paths.get("app/src/main/resources/web"));
+    assets("/api/html/*", Paths.get(getConfig().getString(HTML_REPORTS_PARAM)));
+
+    AssetSource web = AssetSource.create(Paths.get(getConfig().getString(STATIC_RESOURCES_PARAM)));
     assets("/?*", new AssetHandler("index.html", web));
   }
 

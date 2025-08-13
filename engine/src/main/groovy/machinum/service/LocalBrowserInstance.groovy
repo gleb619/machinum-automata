@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @Slf4j
 @CompileStatic
-class BrowserInstance {
+class LocalBrowserInstance implements BrowserInstance {
 
     private final long createdAt = System.currentTimeMillis()
     private final AtomicInteger executionCount = new AtomicInteger(0)
@@ -39,13 +39,14 @@ class BrowserInstance {
     private BrowserWebDriverContainer container
     private WebDriver driver
 
-    BrowserInstance(CacheMediator cacheMediator, String sessionId, ChromeConfig config) {
+    LocalBrowserInstance(CacheMediator cacheMediator, String sessionId, ChromeConfig config) {
         this.sessionId = sessionId
         this.config = config
         this.cacheMediator = cacheMediator
     }
 
-    BrowserInstance initialize() {
+    @Override
+    LocalBrowserInstance initialize() {
         log.info("Initializing browser instance: {}", sessionId)
 
         container = ContainerFactory.createChromeContainer(config)
@@ -71,6 +72,7 @@ class BrowserInstance {
         return remoteDriver
     }
 
+    @Override
     @Synchronized
     //TODO add container recreation on driver exception
     ScenarioResult executeScript(String groovyScript, Map<String, Object> params, int timeoutSeconds = 60) {
@@ -163,11 +165,13 @@ class BrowserInstance {
         return driver.getPageSource()
     }
 
+    @Override
     WebDriver getDriver() {
         lastAccessTime = System.currentTimeMillis()
         return driver
     }
 
+    @Override
     boolean isAlive() {
         try {
             if (started.get()) {
@@ -182,14 +186,17 @@ class BrowserInstance {
         }
     }
 
+    @Override
     String getSessionId() {
         return sessionId
     }
 
+    @Override
     ChromeConfig getConfig() {
         return config
     }
 
+    @Override
     SessionInfo getSessionInfo() {
         return SessionInfo.builder()
                 .id(sessionId)
@@ -201,6 +208,7 @@ class BrowserInstance {
                 .build()
     }
 
+    @Override
     void cleanup() {
         log.info("Cleaning up browser instance: {}", sessionId)
         try {
@@ -218,7 +226,7 @@ class BrowserInstance {
 
     @Override
     String toString() {
-        return "BrowserInstance{" +
+        return "LocalBrowserInstance{" +
                 "container=" + container.getSeleniumAddress() +
                 '}'
     }
@@ -228,7 +236,7 @@ class BrowserInstance {
 
             @Override
             String getTestId() {
-                return "${BrowserInstance.this.getClass()}-${hash}"
+                return "${LocalBrowserInstance.this.getClass()}-${hash}"
             }
 
             @Override

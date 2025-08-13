@@ -35,3 +35,5 @@ engine/build/
 engine/out/*
 engine/src/main/generated/*
 scripts/*.json
+/models/build/tmp/compileJava/previous-compilation-data.bin
+/models/build/tmp/jar/MANIFEST.MF

@@ -10,12 +10,15 @@ public interface ScriptRepository {
 
     List<Script> findAll();
 
-    default Script getById(String id) {
+    default Script getByIdOrName(String id) {
         return findById(id)
+                .or(() -> findByName(id))
                 .orElseThrow(() -> new AppException("Script for given id is not found: %s".formatted(id)));
     }
 
     Optional<Script> findById(String id);
+
+    Optional<Script> findByName(String name);
 
     Script save(Script script);
 

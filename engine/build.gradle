@@ -16,6 +16,8 @@ plugins {
 }*/
 
 dependencies {
+    compileOnly project(":models")
+
     // groovy
     implementation "org.apache.groovy:groovy:$groovyVersion"
     implementation "org.apache.groovy:groovy-jsr223:$groovyVersion"
@@ -25,6 +27,8 @@ dependencies {
     implementation 'org.testcontainers:selenium:1.19.3'
     implementation 'org.kohsuke:groovy-sandbox:1.19'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.3'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.3'
+    compileOnly 'org.slf4j:slf4j-api:2.0.16'
 
     // test
     testImplementation "org.junit.jupiter:junit-jupiter-api:5.11.4"

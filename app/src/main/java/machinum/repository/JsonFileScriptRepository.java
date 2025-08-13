@@ -1,7 +1,10 @@
 package machinum.repository;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +27,11 @@ public class JsonFileScriptRepository implements ScriptRepository {
     @SneakyThrows
     public static JsonFileScriptRepository create(ScriptCodeEncoder encoder, String filePath) {
         var absolutePath = new File(filePath).getCanonicalFile().getAbsolutePath();
-        return new JsonFileScriptRepository(new ObjectMapper(), encoder, new ConcurrentHashMap<>(), absolutePath);
+        var mapper = new ObjectMapper().findAndRegisterModules()
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .enable(SerializationFeature.INDENT_OUTPUT);
+        return new JsonFileScriptRepository(mapper, encoder, new ConcurrentHashMap<>(), absolutePath);
     }
 
     public JsonFileScriptRepository init() {
@@ -43,6 +50,14 @@ public class JsonFileScriptRepository implements ScriptRepository {
     public Optional<Script> findById(String id) {
         return Optional.ofNullable(scripts.get(id))
                 .map(this::decodeScript);
+    }
+
+    @Override
+    public Optional<Script> findByName(@NonNull String name) {
+        return scripts.values().stream()
+                .filter(script -> name.equalsIgnoreCase(script.getName()))
+                .map(this::decodeScript)
+                .findFirst();
     }
 
     @Override

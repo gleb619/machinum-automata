@@ -1,6 +1,9 @@
 package machinum;
 
 import ch.qos.logback.classic.Level;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.jooby.Extension;
 import io.jooby.Jooby;
 import lombok.extern.slf4j.Slf4j;
@@ -9,12 +12,16 @@ import machinum.repository.ScriptCodeEncoder;
 import machinum.repository.ScriptRepository;
 import machinum.service.CacheMediator;
 import machinum.service.ContainerManager;
+import machinum.service.LocalContainerManager;
+import machinum.service.RemoteContainerManager;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 import java.io.File;
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.Map;
 
 @Slf4j
@@ -29,6 +36,12 @@ public class Config implements Extension {
     public static final String CACHE_DIRECTORY_PARAM = "app.cache-directory";
 
     public static final String SECRET_KEY_PARAM = "app.secret-key";
+
+    public static final String STATIC_RESOURCES_PARAM = "app.static-resources";
+
+    public static final String WORK_MODE_PARAM = "app.work-mode";
+
+    public static final String REMOTE_ADDRESS_PARAM = "app.remote-address";
 
 
     @Override
@@ -45,14 +58,28 @@ public class Config implements Extension {
         });
 
         var cacheDirectory = config.getString(CACHE_DIRECTORY_PARAM);
-        var cacheMediator = new CacheMediator(Map.of(
+        var cacheMediator = CacheMediator.create(Map.of(
                 "persistenceDir", cacheDirectory
         ));
         registry.putIfAbsent(CacheMediator.class, cacheMediator);
 
         var recordingDirectory = config.getString(RECORDING_DIRECTORY_PARAM);
         var reportDirectory = config.getString(HTML_REPORTS_PARAM);
-        registry.putIfAbsent(ContainerManager.class, new ContainerManager(cacheMediator, recordingDirectory, reportDirectory));
+        var workMode = config.getString(WORK_MODE_PARAM);
+        if ("local".equals(workMode)) {
+            registry.putIfAbsent(ContainerManager.class, new LocalContainerManager(cacheMediator, recordingDirectory, reportDirectory));
+        } else {
+            var remoteApiBaseUrl = config.getString(REMOTE_ADDRESS_PARAM);
+            var httpClient = HttpClient.newBuilder()
+                    //10min
+                    .connectTimeout(Duration.ofSeconds(600))
+                    .build();
+            var objectMapper = new ObjectMapper().findAndRegisterModules()
+                    .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+                    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    .enable(SerializationFeature.INDENT_OUTPUT);
+            registry.putIfAbsent(ContainerManager.class, new RemoteContainerManager(remoteApiBaseUrl, httpClient, objectMapper));
+        }
 
         var scriptsPath = config.getString(SCRIPTS_PATH_PARAM);
         var secretKey = config.getString(SECRET_KEY_PARAM);

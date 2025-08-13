@@ -29,10 +29,17 @@ class ScenarioEngine {
     ScenarioEngine(BrowserInstance browserInstance, CacheMediator cacheMediator, Map<String, Object> params) {
         this.browserInstance = browserInstance
 
+        def utils
+        if (browserInstance instanceof LocalBrowserInstance) {
+            utils = new ScenarioUtils(browserInstance)
+        } else {
+            utils = new ScenarioUtils.Noop()
+        }
+
         // Secure binding with limited scope
         Binding binding = new Binding([
                 driver: browserInstance.getDriver(),
-                utils: new ScenarioUtils(browserInstance),
+                utils: utils,
                 By: By,
                 Keys: Keys,
                 WebDriverWait: WebDriverWait,
@@ -76,7 +83,9 @@ class ScenarioEngine {
             def duration = Duration.between(start, Instant.now())
             if (duration.toMinutes() < 6) {
                 CompletableFuture.runAsync {
-                    browserInstance.saveVideo(videoFileName)
+                    if (browserInstance instanceof LocalBrowserInstance) {
+                        ((LocalBrowserInstance) browserInstance).saveVideo(videoFileName)
+                    }
                 }
             }
 

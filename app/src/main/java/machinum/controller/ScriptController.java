@@ -122,8 +122,7 @@ public class ScriptController {
 
     @POST("/scripts/{id}/execute")
     public ScenarioResult executeScript(@PathParam("id") String id, StartRequest request) {
-        //TODO add method to search by name or id
-        var script = scriptRepository.getById(id);
+        var script = scriptRepository.getByIdOrName(id);
 
         return containerManager.execute(instance ->
                 instance.executeScript(script.getText(), request.params(), script.getTimeout()));

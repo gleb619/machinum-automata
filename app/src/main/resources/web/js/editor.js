@@ -18,6 +18,7 @@ export function editorApp() {
     scripts: [],
     searchQuery: '',
     isUpdating: false,
+    scriptInitialized: false,
 
     headerMode: 'list',
 
@@ -53,6 +54,7 @@ export function editorApp() {
 
             this.validateUIConfig();
             this.tryParseUIConfig();
+            this.scriptInitialized = true;
         } else {
             this.headerMode = 'create';
         }
@@ -350,6 +352,20 @@ export function editorApp() {
         this.$dispatch('ui-element-refresh');
     },
 
+    thisApp() {
+        return this;
+    },
+
+    resolveScriptText(app) {
+        return () => {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                  resolve(app.script?.text || '');
+                }, 100);
+            });
+        };
+    },
+
     get curlExample() {
         if(!this.selectedSession) return '';
         const request = {
@@ -367,7 +383,7 @@ export function editorApp() {
         const request = {
             params: this.uiData
         };
-        return `curl -X POST ${window.location.origin}/scripts/${this.script.id}/execute \\
+        return `curl -X POST ${window.location.origin}/api/scripts/${this.script.id}/execute \\
   -H 'Content-Type: application/json' \\
   -d '${JSON.stringify(request)}'`;
     },

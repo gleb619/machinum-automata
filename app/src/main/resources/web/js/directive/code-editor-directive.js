@@ -5,7 +5,14 @@ Alpine.directive('code-editor', (el, { expression }, { evaluate, cleanup, effect
     el._x_code_editor_initialized = true;
 
     let options = {};
-    let state = { code: '', language: '', searchTerm: '', errors: [], };
+    let state = {
+        code: '',
+        language: '',
+        searchTerm: '',
+        errors: [],
+        inputDebounce: 10,
+    };
+    let debouncedUpdateHandler;
     let debouncedChangeHandler;
     let debouncedBlurHandler;
     let debouncedValidationHandler;
@@ -109,7 +116,7 @@ Alpine.directive('code-editor', (el, { expression }, { evaluate, cleanup, effect
         updateLineNumbers();
     };
 
-    const onInput = (e) => {
+    const onInput = debounce((e) => {
         state.code = e.target.value;
 
         // Immediate UI updates for responsiveness
@@ -118,10 +125,11 @@ Alpine.directive('code-editor', (el, { expression }, { evaluate, cleanup, effect
         });
 
         // Debounced events
-        el.dispatchEvent(new CustomEvent('code-update', { detail: { code: state.code }, bubbles: true }));
+        //el.dispatchEvent(new CustomEvent('code-update', { detail: { code: state.code }, bubbles: true }));
+        if (debouncedUpdateHandler) debouncedUpdateHandler(state.code);
         if (debouncedChangeHandler) debouncedChangeHandler(state.code);
         if (debouncedValidationHandler) debouncedValidationHandler();
-    };
+    }, state.inputDebounce);
 
     const onBlur = () => {
         if (debouncedBlurHandler) debouncedBlurHandler();
@@ -190,7 +198,6 @@ Alpine.directive('code-editor', (el, { expression }, { evaluate, cleanup, effect
         const newConfig = evaluate(expression) || {};
         options = {
             language: 'javascript',
-            initialCode: '',
             debounce: 250,
             blurDebounce: 100,
             validationDebounce: 500,
@@ -199,6 +206,10 @@ Alpine.directive('code-editor', (el, { expression }, { evaluate, cleanup, effect
         };
 
         // Create properly debounced handlers
+        debouncedUpdateHandler = debounce((code) => {
+            el.dispatchEvent(new CustomEvent('code-update', { detail: { code }, bubbles: true }));
+        }, options.debounce);
+
         debouncedChangeHandler = debounce((code) => {
             el.dispatchEvent(new CustomEvent('code-change', { detail: { code, debounce: options.debounce }, bubbles: true }));
         }, options.debounce);
@@ -211,10 +222,23 @@ Alpine.directive('code-editor', (el, { expression }, { evaluate, cleanup, effect
             validate();
         }, options.validationDebounce);
 
+        if(options.initialCode && typeof options.initialCode === 'function') {
+            if(!state.code) {
+                Promise.resolve(options.initialCode()).then(function(value) {
+                    state.code = value;
+                    editor.value = state.code;
+                    processUpdates();
+                });
+            }
+        }
+
+        /*
         if (state.code !== options.initialCode) {
+            console.info("case2");
             state.code = options.initialCode;
             editor.value = state.code;
         }
+        */
         state.language = options.language;
 
         editor.placeholder = `// Your ${state.language} code here`;
@@ -232,6 +256,7 @@ Alpine.directive('code-editor', (el, { expression }, { evaluate, cleanup, effect
 
     cleanup(() => {
         // Cancel any pending debounced calls
+        if (debouncedUpdateHandler && debouncedUpdateHandler.cancel) debouncedUpdateHandler.cancel();
         if (debouncedChangeHandler && debouncedChangeHandler.cancel) debouncedChangeHandler.cancel();
         if (debouncedBlurHandler && debouncedBlurHandler.cancel) debouncedBlurHandler.cancel();
         if (debouncedValidationHandler && debouncedValidationHandler.cancel) debouncedValidationHandler.cancel();

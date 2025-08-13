@@ -25,7 +25,7 @@ public class ContainerFactory {
             log.info("Created recording folder: {}", recordingDirectory.getAbsolutePath());
         }
 
-        var container = new BrowserWebDriverContainer<>()
+        var container = new BrowserWebDriverContainer<>("selenium/standalone-chrome")
                 .withRecordingMode(
                         BrowserWebDriverContainer.VncRecordingMode.valueOf(config.getRecordingMode()),
                         recordingDirectory,

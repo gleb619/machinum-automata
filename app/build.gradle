@@ -18,6 +18,7 @@ dependencyManagement {
 
 dependencies {
     // engine
+    implementation project(":models")
     implementation project(":engine")
     compileOnly "org.apache.groovy:groovy:$groovyVersion"
 
