@@ -10,10 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import machinum.repository.JsonFileScriptRepository;
 import machinum.repository.ScriptCodeEncoder;
 import machinum.repository.ScriptRepository;
-import machinum.service.CacheMediator;
-import machinum.service.ContainerManager;
-import machinum.service.LocalContainerManager;
-import machinum.service.RemoteContainerManager;
+import machinum.service.*;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 import org.thymeleaf.TemplateEngine;
@@ -66,8 +63,11 @@ public class Config implements Extension {
         var recordingDirectory = config.getString(RECORDING_DIRECTORY_PARAM);
         var reportDirectory = config.getString(HTML_REPORTS_PARAM);
         var workMode = config.getString(WORK_MODE_PARAM);
+
+        ResultStorage resultStorage;
         if ("local".equals(workMode)) {
-            registry.putIfAbsent(ContainerManager.class, new LocalContainerManager(cacheMediator, recordingDirectory, reportDirectory));
+            resultStorage = new InMemoryResultStorage();
+            registry.putIfAbsent(ContainerManager.class, new LocalContainerManager(cacheMediator, resultStorage, recordingDirectory, reportDirectory));
         } else {
             var remoteApiBaseUrl = config.getString(REMOTE_ADDRESS_PARAM);
             var httpClient = HttpClient.newBuilder()
@@ -78,8 +78,10 @@ public class Config implements Extension {
                     .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
                     .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                     .enable(SerializationFeature.INDENT_OUTPUT);
+            resultStorage = new RemoteResultStorage(remoteApiBaseUrl, httpClient, objectMapper);
             registry.putIfAbsent(ContainerManager.class, new RemoteContainerManager(remoteApiBaseUrl, httpClient, objectMapper));
         }
+        registry.putIfAbsent(ResultStorage.class, resultStorage);
 
         var scriptsPath = config.getString(SCRIPTS_PATH_PARAM);
         var secretKey = config.getString(SECRET_KEY_PARAM);

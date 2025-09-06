@@ -90,14 +90,15 @@ public class RemoteContainerManager implements ContainerManager {
                     .build();
 
             log.debug(">> DELETE {}", remoteApiBaseUrl + "/api/remote/sessions/" + sessionId);
-            HttpResponse<Void> response = httpClient.sendAsync(request, HttpResponse.BodyHandlers.discarding()).get(10, TimeUnit.SECONDS);
+            HttpResponse<Void> response = httpClient.sendAsync(request, HttpResponse.BodyHandlers.discarding())
+                    .get(30, TimeUnit.SECONDS);
             log.debug("<< DELETE {} {}", remoteApiBaseUrl + "/api/remote/sessions/" + sessionId, response.statusCode());
 
             if (response.statusCode() != 204) {
                 log.warn("Failed to terminate remote instance {}, status: {}, body: {}", sessionId, response.statusCode(), response.body());
             }
         } catch (TimeoutException e) {
-            log.warn("Error terminating remote instance %s, omit proceedings".formatted(sessionId), e);
+            log.warn("Timeout, can't terminate remote instance %s, omit proceedings".formatted(sessionId), e);
         } catch (InterruptedException | ExecutionException e) {
             log.error("Error terminating remote instance %s".formatted(sessionId), e);
             throw new AppException("Error terminating remote instance", e);

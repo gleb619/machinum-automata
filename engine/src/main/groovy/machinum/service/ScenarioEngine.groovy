@@ -81,6 +81,7 @@ class ScenarioEngine {
 
         future.whenComplete { result, ex ->
             def duration = Duration.between(start, Instant.now())
+            //Video more than 6 minutes take too long, we skip them
             if (duration.toMinutes() < 6) {
                 CompletableFuture.runAsync {
                     if (browserInstance instanceof LocalBrowserInstance) {

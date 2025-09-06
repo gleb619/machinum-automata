@@ -30,6 +30,7 @@ class LocalContainerManager implements ContainerManager {
     private final ScheduledExecutorService cleanupExecutor = Executors.newSingleThreadScheduledExecutor()
     private final AtomicInteger sessionCounter = new AtomicInteger(0)
     private final CacheMediator cacheMediator
+    private final ResultStorage resultStorage
     private final String recordingDirectory
     private final String reportDirectory
 
@@ -37,11 +38,13 @@ class LocalContainerManager implements ContainerManager {
      * Constructs a LocalContainerManager with the specified dependencies and directories.
      *
      * @param cacheMediator The mediator for caching operations.
+     * @param resultStorage The storage for scenario results.
      * @param recordingDirectory Directory where recordings are stored.
      * @param reportDirectory Directory where reports are generated.
      */
-    LocalContainerManager(CacheMediator cacheMediator, String recordingDirectory, String reportDirectory) {
+    LocalContainerManager(CacheMediator cacheMediator, ResultStorage resultStorage, String recordingDirectory, String reportDirectory) {
         this.cacheMediator = cacheMediator
+        this.resultStorage = resultStorage
         this.recordingDirectory = recordingDirectory
         this.reportDirectory = reportDirectory
     }
@@ -72,7 +75,7 @@ class LocalContainerManager implements ContainerManager {
             BrowserInstance instance = new LocalBrowserInstance(cacheMediator, sessionId, config.toBuilder()
                     .recordingDirectory(recordingDirectory)
                     .reportDirectory(reportDirectory)
-                    .build())
+                    .build(), resultStorage)
                     .initialize()
             activeInstances.put(sessionId, instance)
             log.info("Browser instance created successfully: {}", sessionId)

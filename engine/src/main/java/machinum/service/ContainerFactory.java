@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import machinum.model.ChromeConfig;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.testcontainers.containers.BrowserWebDriverContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.VncRecordingContainer;
 
 import java.io.File;
@@ -13,6 +14,8 @@ import java.util.Map;
 
 @Slf4j
 public class ContainerFactory {
+
+    static final Network network = Network.newNetwork();
 
     @SneakyThrows
     public static BrowserWebDriverContainer<?> createChromeContainer(ChromeConfig config) {
@@ -32,7 +35,8 @@ public class ContainerFactory {
                         VncRecordingContainer.VncRecordingFormat.MP4
                 )
                 .withCapabilities(buildChromeOptions(config))
-                .withReuse(true);
+                .withReuse(true)
+                .withNetwork(network);
 
         for (Map.Entry<String, String> env : config.getEnvironmentVariables().entrySet()) {
             container.withEnv(env.getKey(), env.getValue());

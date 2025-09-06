@@ -37,6 +37,9 @@ public class ChromeConfig {
     private int scriptTimeoutSeconds = 30;
 
     @Builder.Default
+    private boolean videoRecordingEnabled = false;
+
+    @Builder.Default
     private String recordingMode = "RECORD_ALL";
 
     @Builder.Default

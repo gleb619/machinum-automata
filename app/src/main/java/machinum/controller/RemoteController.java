@@ -141,7 +141,7 @@ public class RemoteController {
      */
     private void terminateInstanceQuietly(BrowserInstance instance) {
         try {
-            CompletableFuture.runAsync(() -> containerManager.terminateInstance(instance.getSessionId())).get(10, TimeUnit.SECONDS);
+            CompletableFuture.runAsync(() -> containerManager.terminateInstance(instance.getSessionId())).get(30, TimeUnit.SECONDS);
         } catch (InterruptedException | TimeoutException | ExecutionException e) {
             log.warn("Error terminating local instance %s, omit proceedings".formatted(instance.getSessionId()), e);
         }

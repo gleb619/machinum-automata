@@ -33,16 +33,18 @@ class LocalBrowserInstance implements BrowserInstance {
     private final String sessionId
     private final ChromeConfig config
     private final CacheMediator cacheMediator
+    private final ResultStorage resultStorage
 
     private volatile long lastAccessTime = System.currentTimeMillis()
 
     private BrowserWebDriverContainer container
     private WebDriver driver
 
-    LocalBrowserInstance(CacheMediator cacheMediator, String sessionId, ChromeConfig config) {
+    LocalBrowserInstance(CacheMediator cacheMediator, String sessionId, ChromeConfig config, ResultStorage resultStorage) {
         this.sessionId = sessionId
         this.config = config
         this.cacheMediator = cacheMediator
+        this.resultStorage = resultStorage
     }
 
     @Override
@@ -107,7 +109,9 @@ class LocalBrowserInstance implements BrowserInstance {
 
             log.info("Script execution completed for session {} in {}s", sessionId, Duration.between(start, Instant.now()).toSeconds())
 
-            return ScenarioResult.success(result, videoFileName, start)
+            def scenarioResult = ScenarioResult.success(result, videoFileName, start)
+            resultStorage.save(scenarioResult)
+            return scenarioResult
         } catch (Exception e) {
             log.error("Script execution failed for session {}: {}", sessionId, e.message, e)
             String screenshot
@@ -125,7 +129,9 @@ class LocalBrowserInstance implements BrowserInstance {
                 return file.getName()
             }.get(config.scriptTimeoutSeconds, TimeUnit.SECONDS)
 
-            return ScenarioResult.failure(e.message, screenshot, videoFileName, htmlFile, start)
+            def scenarioResult = ScenarioResult.failure(e.message, screenshot, videoFileName, htmlFile, start)
+            resultStorage.save(scenarioResult)
+            return scenarioResult
         }
     }
 
@@ -232,6 +238,10 @@ class LocalBrowserInstance implements BrowserInstance {
     }
 
     void saveVideo(String hash) {
+        if (!config.isVideoRecordingEnabled()) {
+            return
+        }
+
         container.afterTest(new TestDescription() {
 
             @Override

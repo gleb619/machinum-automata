@@ -2,14 +2,13 @@ package machinum.service
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.openqa.selenium.By
-import org.openqa.selenium.JavascriptExecutor
-import org.openqa.selenium.WebDriver
-import org.openqa.selenium.WebElement
+import org.openqa.selenium.*
+import org.openqa.selenium.interactions.Actions
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 
 import java.time.Duration
+import java.util.NoSuchElementException
 
 @Slf4j
 @CompileStatic
@@ -145,6 +144,20 @@ class ScenarioUtils {
 
     void logDebug(String text) {
         logDebug(text, new Object[0])
+    }
+
+    void safeClick(WebElement element) {
+        try {
+            element.click()
+        } catch (ElementClickInterceptedException ignore) {
+            driver.findElement(By.tagName("body")).sendKeys(Keys.ESCAPE)
+
+            Actions action = new Actions(driver)
+            action.sendKeys(Keys.ESCAPE).build().perform()
+
+            WebElement currentElement = driver.switchTo().activeElement()
+            currentElement.sendKeys(Keys.ESCAPE)
+        }
     }
 
     /* ========= */

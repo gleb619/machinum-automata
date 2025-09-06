@@ -12,6 +12,7 @@ import machinum.model.ScenarioResult;
 import machinum.model.Script;
 import machinum.repository.ScriptRepository;
 import machinum.service.ContainerManager;
+import machinum.service.ResultStorage;
 import org.codehaus.groovy.control.*;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -28,9 +29,12 @@ public class ScriptController {
 
     private final ScriptRepository scriptRepository;
     private final ContainerManager containerManager;
+    private final ResultStorage resultStorage;
 
     public static ScriptController_ scriptController(Jooby application) {
-        return new ScriptController_(application.require(ScriptRepository.class), application.require(ContainerManager.class));
+        return new ScriptController_(application.require(ScriptRepository.class),
+                application.require(ContainerManager.class),
+                application.require(ResultStorage.class));
     }
 
     public static ValidationResult validateGroovyCode(String code) {
@@ -126,6 +130,27 @@ public class ScriptController {
 
         return containerManager.execute(instance ->
                 instance.executeScript(script.getText(), request.params(), script.getTimeout()));
+    }
+
+    @GET("/results")
+    public List<ScenarioResult> getAllResults() {
+        return resultStorage.getAll();
+    }
+
+    @GET("/results/{id}")
+    public ScenarioResult getResultById(@PathParam("id") String id, Context ctx) {
+        ScenarioResult result = resultStorage.getById(id);
+        if (result == null) {
+            ctx.setResponseCode(StatusCode.NOT_FOUND);
+            throw new AppException("Result not found");
+        }
+        return result;
+    }
+
+    @DELETE("/results/{id}")
+    public void deleteResult(@PathParam("id") String id, Context ctx) {
+        resultStorage.deleteById(id);
+        ctx.setResponseCode(StatusCode.NO_CONTENT);
     }
 
     private boolean validateDto(Script script) {
