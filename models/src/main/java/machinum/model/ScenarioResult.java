@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -11,6 +12,8 @@ import java.time.Instant;
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
 public class ScenarioResult {
 
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
     private boolean success;
     private String error;
     private Object data;

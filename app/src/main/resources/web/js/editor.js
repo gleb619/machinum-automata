@@ -4,6 +4,7 @@ export function editorApp() {
     script: {},
     scriptBackup: {},
     executionResults: [],
+    serverResults: [],
     // Templates
     templates: TEMPLATES,
 
@@ -386,6 +387,35 @@ export function editorApp() {
         return `curl -X POST ${window.location.origin}/api/scripts/${this.script.id}/execute \\
   -H 'Content-Type: application/json' \\
   -d '${JSON.stringify(request)}'`;
+    },
+
+    async fetchServerResults() {
+        try {
+            const response = await fetch('/api/results');
+            if (!response.ok) throw new Error('Failed to fetch server results');
+            const results = await response.json();
+            this.serverResults = results.map(result => ({
+                ...result,
+                timestamp: new Date(), // placeholder timestamp
+                duration: result.executionTime
+            }));
+        } catch (error) {
+            console.error('Failed to fetch server results:', error);
+            this.showToast('Failed to load server results.', true);
+        }
+    },
+
+    async deleteServerResult(id) {
+        if (!confirm('Are you sure you want to delete this result?')) return;
+        try {
+            const response = await fetch(`/api/results/${id}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Failed to delete result');
+            this.showToast('Result deleted successfully!');
+            await this.fetchServerResults(); // refresh
+        } catch (error) {
+            console.error('Failed to delete result:', error);
+            this.showToast('Error deleting result.', true);
+        }
     },
 
   }

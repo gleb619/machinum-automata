@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Layout -->
+<div th:fragment="tab" th:remove="tag">
+
+    <!-- Server Results Card -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden"
+         x-cloak x-show="serverResults.length > 0">
+        <div class="bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-white flex items-center">
+                    <svg class="mr-2" fill="currentColor" height="16" viewBox="0 0 576 512" width="16">
+                        <path d="M9.4 86.6C-3.1 74.1-3.1 53.9 9.4 41.4s32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L178.7 256 9.4 86.6zM256 416H544c17.7 0 32 14.3 32 32s-14.3 32-32 32H256c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/>
+                    </svg>
+                    Stored Results
+                </h2>
+
+                <button @click="fetchServerResults()"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    <svg fill="none" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Refresh
+                </button>
+
+            </div>
+        </div>
+        <div class="p-6 max-h-128 overflow-y-auto">
+            <div class="space-y-4">
+                <template :key="result.id" x-for="result in serverResults">
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-2">
+                                <span :class="result.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                                      class="px-2 py-1 rounded-full text-xs font-medium">
+                                    <svg class="mr-1" height="16" viewBox="0 0 448 512"
+                                         width="16" x-cloak x-show="result.success">
+                                        <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/>
+                                    </svg>
+                                    <svg class="mr-1" height="16" viewBox="0 0 384 512"
+                                         width="16" x-cloak x-show="!result.success">
+                                        <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/>
+                                    </svg>
+                                    <span x-text="result.success ? 'Success' : 'Error'"></span>
+                                </span>
+                                <span class="text-xs text-gray-500"
+                                      x-text="new Date(result.timestamp).toLocaleString()"></span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs text-gray-500">
+                                    <span x-text="`Duration: ${result.duration}s`"></span>
+                                </span>
+                                <button @click="deleteServerResult(result.id)"
+                                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition-colors">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 overflow-x-auto" x-data="{ activeResultTab: 'pre' }">
+                            <div class="flex border-b border-gray-200">
+                                <button :class="{ 'border-b-2 border-blue-500 text-blue-600': activeResultTab === 'pre' }"
+                                        @click="activeResultTab = 'pre'"
+                                        class="inline-flex p-4 text-sm font-medium cursor-pointer">Pre
+                                </button>
+                                <button :class="{ 'border-b-2 border-blue-500 text-blue-600': activeResultTab === 'img' }"
+                                        @click="activeResultTab = 'img'"
+                                        class="inline-flex p-4 text-sm font-medium cursor-pointer"
+                                        x-cloak x-show="result.screenshot">Image
+                                </button>
+                                <button :class="{ 'border-b-2 border-blue-500 text-blue-600': activeResultTab === 'video' }"
+                                        @click="activeResultTab = 'video'"
+                                        class="inline-flex p-4 text-sm font-medium cursor-pointer"
+                                        x-cloak x-show="result.videoFile">Video
+                                </button>
+                                <button :class="{ 'border-b-2 border-blue-500 text-blue-600': activeResultTab === 'html-page' }"
+                                        @click="activeResultTab = 'html-page'"
+                                        class="inline-flex p-4 text-sm font-medium cursor-pointer"
+                                        x-cloak x-show="result.htmlFile">Html Page
+                                </button>
+                            </div>
+                            <div class="max-h-64" x-cloak x-show="activeResultTab === 'pre'">
+                                <pre class="text-sm text-gray-800 whitespace-pre-wrap p-4"
+                                     x-text="result.success ? JSON.stringify(result.data, null, 2) : JSON.stringify({ error: result.error }, null, 2)"></pre>
+                            </div>
+                            <div x-cloak x-show="activeResultTab === 'img'">
+                                <img :src="`data:image/png;base64, ${result.screenshot}`"
+                                     class="h-auto max-w-full rounded-md mt-4" x-cloak x-show="result.screenshot">
+                            </div>
+                            <template x-if="activeResultTab === 'video' && result.videoFile">
+                                <video class="w-full"
+                                       controls
+                                       height="480"
+                                       poster="http://example.com/preview-poster.svg"
+                                       preload="none"
+                                       th:poster="@{~/images/preview-poster.svg}"
+                                       width="640">
+                                    <source :src="`/api/video/${result.videoFile}`" type="video/mp4">
+                                </video>
+                            </template>
+                            <template x-if="activeResultTab === 'html-page' && result.htmlFile">
+                                <iframe
+                                        :src="`/api/html/${result.htmlFile}`"
+                                        class="w-full h-full"
+                                        sandbox="allow-same-origin"
+                                        src="https://example.com">
+                                </iframe>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Results Message -->
+    <div class="text-center py-12" x-cloak x-show="serverResults.length === 0">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"
+                  stroke-width="2"/>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No stored results</h3>
+        <p class="mt-1 text-sm text-gray-500">Execute some scripts to see results here.</p>
+        <button @click="fetchServerResults()"
+                class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+            Refresh
+        </button>
+    </div>
+
+</div>
+</body>
+</html>

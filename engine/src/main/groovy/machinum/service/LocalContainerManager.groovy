@@ -33,6 +33,7 @@ class LocalContainerManager implements ContainerManager {
     private final ResultStorage resultStorage
     private final String recordingDirectory
     private final String reportDirectory
+    private final Boolean recordVideo
 
     /**
      * Constructs a LocalContainerManager with the specified dependencies and directories.
@@ -41,12 +42,15 @@ class LocalContainerManager implements ContainerManager {
      * @param resultStorage The storage for scenario results.
      * @param recordingDirectory Directory where recordings are stored.
      * @param reportDirectory Directory where reports are generated.
+     * @param recordVideo Flag determines whether the resulting video will be created..
      */
-    LocalContainerManager(CacheMediator cacheMediator, ResultStorage resultStorage, String recordingDirectory, String reportDirectory) {
+    LocalContainerManager(CacheMediator cacheMediator, ResultStorage resultStorage, String recordingDirectory, String reportDirectory,
+                          Boolean recordVideo) {
         this.cacheMediator = cacheMediator
         this.resultStorage = resultStorage
         this.recordingDirectory = recordingDirectory
         this.reportDirectory = reportDirectory
+        this.recordVideo = recordVideo
     }
 
     /**
@@ -96,7 +100,7 @@ class LocalContainerManager implements ContainerManager {
         if (!activeInstances.isEmpty()) {
             return getInstance(activeInstances.keySet().last())
         } else {
-            def id = createInstance(ChromeConfig.defaultOne())
+            def id = createInstance(ChromeConfig.defaultOne(recordVideo))
             return getInstance(id)
         }
     }

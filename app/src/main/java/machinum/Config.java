@@ -40,6 +40,8 @@ public class Config implements Extension {
 
     public static final String REMOTE_ADDRESS_PARAM = "app.remote-address";
 
+    public static final String VIDEO_RECORDING_ENABLED_PARAM = "app.video-recording-enabled";
+
 
     @Override
     public void install(@NotNull Jooby application) throws Exception {
@@ -63,11 +65,13 @@ public class Config implements Extension {
         var recordingDirectory = config.getString(RECORDING_DIRECTORY_PARAM);
         var reportDirectory = config.getString(HTML_REPORTS_PARAM);
         var workMode = config.getString(WORK_MODE_PARAM);
+        var videoRecordingEnabled = config.getBoolean(VIDEO_RECORDING_ENABLED_PARAM);
 
         ResultStorage resultStorage;
         if ("local".equals(workMode)) {
             resultStorage = new InMemoryResultStorage();
-            registry.putIfAbsent(ContainerManager.class, new LocalContainerManager(cacheMediator, resultStorage, recordingDirectory, reportDirectory));
+            registry.putIfAbsent(ContainerManager.class, new LocalContainerManager(
+                    cacheMediator, resultStorage, recordingDirectory, reportDirectory, videoRecordingEnabled));
         } else {
             var remoteApiBaseUrl = config.getString(REMOTE_ADDRESS_PARAM);
             var httpClient = HttpClient.newBuilder()

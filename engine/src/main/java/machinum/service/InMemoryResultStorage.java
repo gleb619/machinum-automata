@@ -16,8 +16,9 @@ public class InMemoryResultStorage implements ResultStorage {
     public void save(ScenarioResult result) {
         // Assuming ScenarioResult has an ID, or generate one
         String id = result.getVideoFile() != null ? result.getVideoFile() : String.valueOf(System.nanoTime());
-        results.put(id, result);
-        resultList.add(result);
+        ScenarioResult resultWithId = result.toBuilder().id(id).build();
+        results.put(id, resultWithId);
+        resultList.add(resultWithId);
     }
 
     @Override

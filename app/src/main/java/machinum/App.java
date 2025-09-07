@@ -24,6 +24,7 @@ import java.util.Map;
 
 import static machinum.Config.*;
 import static machinum.controller.RemoteController.remoteController;
+import static machinum.controller.ResultController.resultController;
 import static machinum.controller.ScriptController.scriptController;
 import static machinum.controller.SessionController.sessionController;
 import static machinum.util.Util.hasCause;
@@ -81,6 +82,7 @@ public class App extends Jooby {
     mvc(sessionController(this));
     mvc(scriptController(this));
     mvc(remoteController(this));
+    mvc(resultController(this));
 
     get("/", ctx -> new MapModelAndView("index.html", Map.of()));
 

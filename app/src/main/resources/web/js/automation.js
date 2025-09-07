@@ -10,6 +10,7 @@ export function automationApp() {
             '--disable-translate'
         ],
         headless: true,
+        videoRecordingEnabled: false,
         timeoutSeconds: 30,
         userAgent: '',
         implicitWaitSeconds: 10,

@@ -61,7 +61,7 @@ public class ChromeConfig {
     @Builder.Default
     private String pageLoadStrategy = "EAGER";
 
-    public static ChromeConfig defaultOne() {
+    public static ChromeConfig defaultOne(Boolean videoRecordingEnabled) {
         return ChromeConfig.builder()
                 .arguments(List.of(
                         "--window-size=1920,1080",
@@ -78,7 +78,12 @@ public class ChromeConfig {
                         "intl.accept_languages", "ru,ru_RU",
                         "intl.selected_languages", "ru,ru_RU"
                 )))
+                .videoRecordingEnabled(videoRecordingEnabled)
                 .build();
+    }
+
+    public static ChromeConfig defaultOne() {
+        return defaultOne(false);
     }
 
 }
