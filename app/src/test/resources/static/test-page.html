@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-content {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e8f4f8;
+            border-left: 4px solid #007acc;
+        }
+        .test-link {
+            display: inline-block;
+            margin: 10px 0;
+            padding: 10px 15px;
+            background-color: #007acc;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .test-link:hover {
+            background-color: #005999;
+        }
+        .form-section {
+            margin: 20px 0;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 300px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Test Page</h1>
+
+    <div class="test-content" id="test-content">
+        <h2>Test Content</h2>
+        <p>This is a test page for integration testing of the ScriptController.</p>
+        <p>The page contains various elements that can be tested by automation scripts.</p>
+    </div>
+
+    <div class="form-section">
+        <h2>Test Form</h2>
+        <form id="test-form">
+            <label for="name-input">Name:</label>
+            <input id="name-input" name="name" type="text" value="Test User">
+
+            <label for="age-input">Age:</label>
+            <input id="age-input" name="age" type="number" value="25">
+
+            <button id="submit-btn" type="submit">Submit</button>
+        </form>
+    </div>
+
+    <div class="navigation">
+        <a class="test-link" href="#" id="test-link">Test Link</a>
+        <a class="test-link" href="#test-content">Jump to Content</a>
+    </div>
+
+    <div id="dynamic-content">
+        <p>This content can be modified by JavaScript for dynamic testing.</p>
+    </div>
+
+    <script>
+        // Add some dynamic behavior for testing
+        document.getElementById('submit-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('name-input').value;
+            const age = document.getElementById('age-input').value;
+            document.getElementById('dynamic-content').innerHTML =
+                `<p>Hello ${name}, you are ${age} years old!</p>`;
+        });
+
+        // Add a counter for testing dynamic content
+        let counter = 0;
+        setInterval(() => {
+            counter++;
+            document.getElementById('dynamic-content').innerHTML +=
+                `<p>Counter: ${counter}</p>`;
+        }, 1000);
+    </script>
+</div>
+</body>
+</html>

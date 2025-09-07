@@ -125,6 +125,9 @@ class LocalBrowserInstance implements BrowserInstance {
             def pageHtml = capturePageHtml()
             def htmlFile = CompletableFuture.supplyAsync {
                 def file = new File(config.getReportDirectory(), "${this.driver.getCurrentUrl().md5()}-${System.currentTimeMillis()}.html")
+                if (!file.getParentFile().exists()) {
+                    file.getParentFile().mkdirs()
+                }
                 file.write(pageHtml, "UTF-8")
                 return file.getName()
             }.get(config.scriptTimeoutSeconds, TimeUnit.SECONDS)

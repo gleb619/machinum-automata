@@ -23,7 +23,7 @@ class ScenarioUtils {
     }
 
     void open(String url) {
-        driver.get("https://www.deepl.com/en/translator#en/ru/i%20see%20you")
+        driver.get(url)
     }
 
     void randomSleep(int minMs, int maxMs) {
@@ -35,7 +35,7 @@ class ScenarioUtils {
         try {
             driver.findElement(By.cssSelector(selector))
             return true
-        } catch (NoSuchElementException e) {
+        } catch (NoSuchElementException ignored) {
             return false
         }
     }

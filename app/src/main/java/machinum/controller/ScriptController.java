@@ -4,6 +4,7 @@ import io.jooby.Context;
 import io.jooby.Jooby;
 import io.jooby.StatusCode;
 import io.jooby.annotation.*;
+import io.jooby.exception.StatusCodeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import machinum.controller.SessionController.StartRequest;
@@ -122,11 +123,10 @@ public class ScriptController {
     }
 
     @POST("/scripts/{id}/execute")
-    public ScenarioResult executeScript(@PathParam("id") String id, StartRequest request) {
-        var script = scriptRepository.getByIdOrName(id);
-
-        return containerManager.execute(instance ->
-                instance.executeScript(script.getText(), request.params(), script.getTimeout()));
+    public ScenarioResult executeScript(@PathParam("id") String id, StartRequest request, Context ctx) {
+        return scriptRepository.findByIdOrName(id).map(script -> containerManager.execute(instance ->
+                        instance.executeScript(script.getText(), request.params(), script.getTimeout())))
+                .orElseThrow(() -> new StatusCodeException(StatusCode.NOT_FOUND, "Result not found"));
     }
 
     private boolean validateDto(Script script) {
