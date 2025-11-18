@@ -14,8 +14,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -42,7 +44,7 @@ public class RemoteContainerManager implements ContainerManager {
     @Override
     public void init() {
         log.info("RemoteContainerManager initialized for remote API: {}", remoteApiBaseUrl);
-        // No-op for remote client
+        pingRemoteServer();
     }
 
     /**
@@ -231,6 +233,33 @@ public class RemoteContainerManager implements ContainerManager {
         attempt.getAndIncrement();
 
         return newInstance;
+    }
+
+    private void pingRemoteServer() {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(remoteApiBaseUrl + "/health"))
+                    .timeout(Duration.ofSeconds(10))
+                    .GET()
+                    .build();
+
+            log.debug("Pinging remote server at {}", remoteApiBaseUrl + "/health");
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                throw new AppException("Remote server ping failed with status: " + response.statusCode());
+            }
+
+            var jsonMap = objectMapper.readValue(response.body(), Map.class);
+            if (!Boolean.TRUE.equals(jsonMap.get("success"))) {
+                throw new AppException("Remote server ping failed: health check returned false");
+            }
+
+            log.info("Remote server ping successful at {}", remoteApiBaseUrl);
+        } catch (IOException | InterruptedException e) {
+            log.error("Failed to ping remote server", e);
+            throw new AppException("Unable to ping remote server at %s/health".formatted(remoteApiBaseUrl), e);
+        }
     }
 
 }

@@ -6,6 +6,7 @@ plugins {
     id 'com.google.osdetector' version '1.7.3'
     id 'com.github.johnrengelman.shadow' version '7.1.2'
     id 'org.openapi.generator' version "$openapiVersion"
+    id 'com.adarshr.test-logger' version '4.0.0'
 }
 
 mainClassName = "machinum.App"

@@ -1,6 +1,6 @@
 FROM gradle:8-jdk21 as build
 
-RUN --mount=type=bind,source=./.gradle-cache,target=/root/.gradle
+RUN --mount=type=cache,target=/root/.gradle
 
 WORKDIR /machinum-automata
 
@@ -10,14 +10,15 @@ COPY engine/build.gradle ./engine/
 COPY models/build.gradle ./models/
 COPY gradle ./gradle
 
-RUN ./gradlew dependencies --build-cache || echo "Failed to download dependencies, but continuing build."
+RUN chmod +x gradlew && \
+    ./gradlew dependencies --build-cache --no-daemon || echo "Failed to download dependencies, but continuing build."
 
 COPY . ./
 
-RUN ./gradlew build -x test && \
-    ./gradlew shadowJar
+RUN ./gradlew build -x test --no-daemon && \
+    ./gradlew shadowJar --no-daemon
 
-FROM eclipse-temurin:21-jdk
+FROM eclipse-temurin:21-jre
 
 WORKDIR /machinum-automata
 

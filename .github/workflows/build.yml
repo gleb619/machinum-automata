@@ -36,10 +36,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew build
-
-      - name: Run tests
+      - name: Compile and Test with Gradle
         run: ./gradlew test
 
       - name: Log in to GitHub Container Registry
@@ -54,4 +51,6 @@ jobs:
         with:
           context: .
           push: true
+          pull: true
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/machinum-automata:latest
           tags: ghcr.io/${{ github.repository }}/machinum-automata:${{ github.sha }}, ghcr.io/${{ github.repository }}/machinum-automata:latest
